@@ -28,6 +28,7 @@ jobs:
           node tests/visual-release.test.js
           node tests/settlement-v210.test.js
           node tests/economic-v210.test.js
+          node tests/save-storage.test.js
           node tests/ui-repair.test.js
           node tests/delivery.test.js
       - name: Upload site artifact

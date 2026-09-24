@@ -107,11 +107,11 @@ for (const id of ['completionModal','masteryModal','phase3Modal','phase4Modal','
 
 // 7. Release version is coherent across shipping surfaces.
 const pkg = JSON.parse(text('package.json'));
-assert.strictEqual(pkg.version, '2.10.1');
-assert(app.includes("const APP_VERSION = '2.10.1'"));
+assert.strictEqual(pkg.version, '2.10.2');
+assert(app.includes("const APP_VERSION = '2.10.2'"));
 assert(text('sw.js').includes("const BUILD='__BUILD_ID__'"));
-assert(text('index.html').includes('id="releaseVersion">v2.10.1'));
-assert(text('README.md').includes('# Word to the Nations — v2.10.1'));
+assert(text('index.html').includes('id="releaseVersion">v2.10.2'));
+assert(text('README.md').includes('# Word to the Nations — v2.10.2'));
 assert(!text('index.html').includes('phase2-hero'), 'development-era hero class remains');
 
-console.log('Pristine Phase 0 integrity/security: PASS · malicious imports sanitized · future/oversized saves rejected · modal focus contract enforced · v2.10.1 coherent');
+console.log('Pristine Phase 0 integrity/security: PASS · malicious imports sanitized · future/oversized saves rejected · modal focus contract enforced · v2.10.2 coherent');

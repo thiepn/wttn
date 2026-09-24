@@ -6,8 +6,8 @@ const L = require('../legacy-depth.js');
 const root = path.resolve(__dirname,'..');
 const text = f => fs.readFileSync(path.join(root,f),'utf8');
 
-assert.strictEqual(JSON.parse(text('package.json')).version,'2.10.1');
-assert(text('app.js').includes("const APP_VERSION = '2.10.1'"));
+assert.strictEqual(JSON.parse(text('package.json')).version,'2.10.2');
+assert(text('app.js').includes("const APP_VERSION = '2.10.2'"));
 assert(text('sw.js').includes("const BUILD='__BUILD_ID__'"));
 assert(text('index.html').includes('legacy-depth.js'));
 assert(require('fs').readFileSync(require('path').join(__dirname,'../dist/web/index.html'), 'utf8').includes(JSON.parse(require('fs').readFileSync(require('path').join(__dirname,'../dist/build-manifest.json'),'utf8')).assets['legacy-depth.js']), 'module must be included in cached document');

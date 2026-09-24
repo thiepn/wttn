@@ -1,0 +1,28 @@
+'use strict';
+const assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm');
+const Storage=require('../save-storage'),G=require('../game-core'),S=require('../save-format');
+const app=fs.readFileSync(require('node:path').join(__dirname,'../app.js'),'utf8');
+const html=fs.readFileSync(require('node:path').join(__dirname,'../index.html'),'utf8');
+const KEY='wttn.phase6.save.v6',BACKUP='wttn.phase6.backup.v6';let passed=0;
+function test(name,fn){fn();passed++;console.log('PASS '+name);}
+function store(){const data=new Map();return {data,getItem:k=>data.get(k)??null,setItem:(k,v)=>data.set(k,v),removeItem:k=>data.delete(k)};}
+function setup(storage=store()){
+ const nodes=new Map();
+ function node(id){if(!nodes.has(id)){const classes=new Set();nodes.set(id,{textContent:'',hidden:true,classList:{toggle(k,on){if(on)classes.add(k);else classes.delete(k);},contains:k=>classes.has(k)}});}return nodes.get(id);}
+ const state=G.createState();state.producers.scribe=7;state.pages=G.bn(123456);
+ const context={window:{localStorage:storage,WTTNSaveStorage:Storage},$:node,state,SAVE_KEY:KEY,BACKUP_KEY:BACKUP,makeEnvelope:S.makeEnvelope,parseSaveText:S.parseSaveText,saveQuarantined:false,storageAvailable:true,warnedAboutStorage:false,healthCache:{at:55},Date,console:{warn(){}},toast(){}};
+ vm.createContext(context);
+ vm.runInContext(app.slice(app.indexOf('  function storageGet('),app.indexOf('  function loadUiPreferences('))+app.slice(app.indexOf('  function updateSaveStatus('),app.indexOf('  function saveHealthText(')),context);
+ return {context,node,storage,save:show=>vm.runInContext(`save(${!!show})`,context)};
+}
+test('actual save is verified and survives a new reader',()=>{const t=setup();assert(t.save());assert.equal(t.node('saveStatus').textContent,'Saved');assert(t.node('storageWarning').hidden);const loaded=S.parseSaveText(t.storage.getItem(KEY));assert.equal(loaded.state.producers.scribe,7);assert(loaded.state.pages.eq(123456));});
+test('full storage can replace a save even though the old extra probe fails',()=>{const s=store();s.setItem(KEY,S.makeEnvelope(G.createState()));const put=s.setItem;s.setItem=(key,value)=>{if(key!==KEY)throw Object.assign(new Error(),{name:'QuotaExceededError'});put(key,value);};const t=setup(s);assert(t.save());assert.equal(Storage.write(()=>s,'wttn.storage.probe','1').ok,false);assert(t.node('storageWarning').hidden);assert.equal(t.node('saveStatus').textContent,'Saved');assert(!app.includes("storageSet('wttn.storage.probe'"));});
+test('silent dropped writes are not reported as saved',()=>{const t=setup({getItem:()=>null,setItem(){}});assert(!t.save());assert.equal(t.node('saveStatus').textContent,'Export-only');assert(!t.node('storageWarning').hidden);assert.match(t.node('storageWarningText').textContent,/did not keep/);});
+test('quota errors identify storage capacity and preserve the previous save',()=>{const s=store(),old=S.makeEnvelope(G.createState());s.setItem(KEY,old);s.setItem=()=>{throw Object.assign(new Error(),{name:'QuotaExceededError'});};const t=setup(s);assert(!t.save());assert.equal(s.getItem(KEY),old);assert.match(t.node('storageWarningText').textContent,/no room/);});
+test('blocked storage is identified rather than reported as successful',()=>{const t=setup();Object.defineProperty(t.context.window,'localStorage',{get(){throw Object.assign(new Error(),{name:'SecurityError'});}});assert(!t.save());assert.match(t.node('storageWarningText').textContent,/blocking local saves/);});
+test('save preparation failure is not blamed on browser storage',()=>{const s=store(),old=S.makeEnvelope(G.createState());s.setItem(KEY,old);const t=setup(s);t.context.makeEnvelope=()=>{throw new Error('serialization');};assert(!t.save());assert.equal(s.getItem(KEY),old);assert.equal(s.getItem(BACKUP),null);assert.equal(t.node('saveStatus').textContent,'Save preparation failed');assert.match(t.node('storageWarningText').textContent,/could not prepare/);});
+test('an interface error after a verified write cannot report data loss',()=>{const t=setup();t.context.toast=()=>{throw new Error('display failure');};assert(t.save(true));assert.equal(S.parseSaveText(t.storage.getItem(KEY)).state.producers.scribe,7);assert.equal(t.node('saveStatus').textContent,'Saved');assert(t.node('storageWarning').hidden);});
+test('retry clears the warning only after a verified successful save',()=>{const t=setup({getItem:()=>null,setItem(){throw new Error('temporary');}});assert(!t.save());assert(!t.node('storageWarning').hidden);t.context.window.localStorage=store();assert(t.save(true));assert(t.node('storageWarning').hidden);assert.equal(t.node('storageWarningText').textContent,'');assert.equal(t.node('saveStatus').textContent,'Saved');});
+test('quarantine continues to protect stored recovery data',()=>{const t=setup();t.storage.setItem(KEY,'unreadable');t.context.saveQuarantined=true;assert(!t.save());assert.equal(t.storage.getItem(KEY),'unreadable');assert.equal(t.node('saveStatus').textContent,'Recovery needed');});
+test('warning is natively hidden and empty before scripts run',()=>{assert.match(html,/<aside id="storageWarning"[^>]* hidden /);assert.match(html,/<p id="storageWarningText"[^>]*><\/p>/);assert(html.indexOf('src="save-storage.js"')<html.indexOf('src="app.js"'));assert(app.includes("$('retrySaveBtn').onclick = () => save(true)"));assert(app.includes("$('exportWarningBtn').onclick = () => $('exportBtn').click()"));});
+console.log(`${passed} save-storage regression groups passed`);

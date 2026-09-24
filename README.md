@@ -1,8 +1,10 @@
-# Word to the Nations — v2.10.1
+# Word to the Nations — v2.10.2
 
 [Play Word to the Nations](https://thiepn.dev/wttn/) · [Deployment status](https://github.com/thiepn/wttn/actions/workflows/pages.yml)
 
-This patch repairs oversized ledger icons, disappearing Projects navigation, cramped equipment buttons, phone/landscape sheets, decoration placement and overview framing. See [the v2.10.1 repair report](UI-FIX-REPORT.md) for current verification. The original v2.10 documents below describe the larger visual release; their older performance captures are not new measurements for this patch.
+v2.10.2 fixes misleading save warnings: it verifies the actual save by reading it back, removes the redundant storage probe, distinguishes save preparation from storage failures, and offers Retry saving and Export progress when needed. Run `npm run test:saving` for the regression cases. No economic formulas, storage keys or save formats changed.
+
+The preceding UI patch repaired oversized ledger icons, disappearing Projects navigation, cramped equipment buttons, phone/landscape sheets, decoration placement and overview framing. See [the v2.10.1 repair report](UI-FIX-REPORT.md). The original v2.10 documents below describe the larger visual release; their older performance captures are not new measurements for this patch.
 
 Run `npm run test:ui-repairs` for the new placement, framing, appearance-recovery and economic-identity regressions. The final full run passed 33 of 34 existing suites; the pre-existing 14-day offline timing test remained variable and failed its unchanged five-second limit on both the original and patched builds.
 

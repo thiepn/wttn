@@ -15,10 +15,10 @@ const sw = text('sw.js');
 const manifest = JSON.parse(text('manifest.webmanifest'));
 const pkg = JSON.parse(text('package.json'));
 
-assert.strictEqual(pkg.version, '2.10.1');
-assert(app.includes("const APP_VERSION = '2.10.1'"));
+assert.strictEqual(pkg.version, '2.10.2');
+assert(app.includes("const APP_VERSION = '2.10.2'"));
 assert(sw.includes("const BUILD='__BUILD_ID__'"));
-assert(html.includes('id="releaseVersion">v2.10.1'));
+assert(html.includes('id="releaseVersion">v2.10.2'));
 
 for (const id of ['mobileMenuButton','topActions','atlasViewport','atlasZoomOutBtn','atlasResetViewBtn','atlasZoomInBtn','atlasAccessibleSummary','motionPreference','textScale','contrastPreference']) {
   assert(html.includes(`id="${id}"`), `missing Phase 13 element ${id}`);

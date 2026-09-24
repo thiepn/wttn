@@ -1,6 +1,6 @@
 {
   "name": "word-to-the-nations",
-  "version": "2.10.1",
+  "version": "2.10.2",
   "private": true,
   "scripts": {
     "test": "node tests/phase2.test.js && node tests/specializations.test.js && node tests/phase3.test.js && node tests/phase4.test.js && node tests/phase5.test.js && node tests/phase6.test.js && node tests/static-audit.js && node tests/phase7.test.js && node tests/phase8.test.js && node tests/phase9-certification.test.js && node tests/phase0-integrity-security.test.js && node tests/phase10-release.test.js && node tests/pristine-phase1-disclosure.test.js && node tests/pristine-phase2-ux.test.js && node tests/pristine-phase3-typography.test.js && node tests/pristine-phase4-atlas.test.js && node tests/pristine-phase5-art.test.js && node tests/pristine-phase6-motion.test.js && node tests/pristine-phase7-audio.test.js && node tests/pristine-phase8-early-game.test.js && node tests/pristine-phase9-depth.test.js && node tests/pristine-phase10-fields.test.js && node tests/pristine-phase11-legacy-endgame.test.js && node tests/pristine-phase12-content-quality.test.js && node tests/pristine-phase13-platform.test.js && node tests/atlas-chamber.test.js && node tests/workshop.test.js && node tests/settlement.test.js",
@@ -17,7 +17,8 @@
     "test:browser": "node tests/atlas-chamber.browser.cjs",
     "test:sessions": "node tests/workshop-sessions.js",
     "test:visual": "node tests/presentation.test.js && node tests/settlement-v29.test.js && node tests/visual-release.test.js && node tests/settlement-v210.test.js && node tests/economic-v210.test.js && node tests/delivery.test.js",
-    "test:ui-repairs": "node tests/ui-repair.test.js"
+    "test:ui-repairs": "node tests/ui-repair.test.js",
+    "test:saving": "node tests/save-storage.test.js"
   },
   "description": "A sunlit Scripture settlement with animated workers, meaningful idle progression, finite purchasing plans and optional reading."
 }

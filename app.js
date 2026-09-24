@@ -20,7 +20,7 @@
   const BACKUP_KEY = 'wttn.phase6.backup.v6';
   const LEGACY_SAVE_KEYS = ['wttn.phase5.save.v5','wttn.phase4.save.v4','wttn.phase3.save.v3','wttn.phase2.save.v2','wttn.phase1.save.v1'];
   const SMOKE_MODE = typeof location !== 'undefined' && new URLSearchParams(location.search).has('smoke');
-  const APP_VERSION = '2.10.1';
+  const APP_VERSION = '2.10.2';
   const UI_PREFS_KEY = 'wttn.ui.preferences.v1';
   const $ = id => document.getElementById(id);
   const paint = (element, markup) => window.WTTNView.patch(element, markup);
@@ -65,7 +65,7 @@
   };
 
   function storageGet(key) { try { return window.localStorage?.getItem(key) ?? null; } catch { return null; } }
-  function storageSet(key, value) { try { if (!window.localStorage || typeof window.localStorage.setItem !== 'function') return false; window.localStorage.setItem(key, value); return true; } catch { return false; } }
+  function storageSet(key, value) { return window.WTTNSaveStorage.write(() => window.localStorage, key, value).ok; }
   function storageRemove(key) { try { window.localStorage?.removeItem(key); return true; } catch { return false; } }
 
 
@@ -341,30 +341,48 @@
     el.classList.toggle('error', kind === 'error');
   }
 
+  function setStorageWarning(message = '') {
+    const warning = $('storageWarning');
+    if (!warning) return;
+    $('storageWarningText').textContent = message;
+    warning.hidden = !message;
+    warning.classList.toggle('hidden', !message);
+  }
+
   function save(show = false, { backup = true } = {}) {
     if (saveQuarantined) { updateSaveStatus('Recovery needed', 'error'); return false; }
+    let envelope;
     try {
-      const previous = storageGet(SAVE_KEY);
-      if (backup && previous) {
-        try { parseSaveText(previous); storageSet(BACKUP_KEY, previous); } catch { /* never back up corrupt bytes */ }
-      }
-      if (!storageSet(SAVE_KEY, makeEnvelope(state))) throw new Error('Local storage is unavailable or full.');
-      storageAvailable = true;
-      $('storageWarning')?.classList.add('hidden');
-      state.lastSavedAt = Date.now();
-      healthCache.at = 0;
-      updateSaveStatus('Saved');
-      if (show) toast('Saved locally');
-      return true;
-    } catch (e) {
+      envelope = makeEnvelope(state);
+    } catch {
+      updateSaveStatus('Save preparation failed', 'error');
+      setStorageWarning(window.WTTNSaveStorage.message('serialization'));
+      return false;
+    }
+    const previous = storageGet(SAVE_KEY);
+    if (backup && previous) {
+      try { parseSaveText(previous); storageSet(BACKUP_KEY, previous); } catch { /* never back up corrupt bytes */ }
+    }
+    const result = window.WTTNSaveStorage.write(() => window.localStorage, SAVE_KEY, envelope);
+    if (!result.ok) {
       storageAvailable = false;
       if (!warnedAboutStorage) { console.warn('Local saving is unavailable; export remains available.'); warnedAboutStorage = true; }
       updateSaveStatus('Export-only', 'error');
-      if ($('storageWarning')) $('storageWarning').textContent = 'This browser is not retaining saves. Use Export before closing to keep your progress.';
-      $('storageWarning')?.classList.remove('hidden');
+      setStorageWarning(window.WTTNSaveStorage.message(result.reason));
       if (show) toast('Could not save locally');
       return false;
     }
+    // Storage success must not be reclassified as data loss by a UI error.
+    storageAvailable = true;
+    warnedAboutStorage = false;
+    state.lastSavedAt = Date.now();
+    healthCache.at = 0;
+    try {
+      setStorageWarning();
+      updateSaveStatus('Saved');
+      if (show) toast('Saved locally');
+    } catch (error) { console.warn('Save retained; save-status display could not refresh.', error); }
+    return true;
   }
 
   function saveHealthText(force = false) {
@@ -1867,6 +1885,8 @@
     $('exportFeedback').textContent = '';
     $('exportDialog').showModal();
   };
+  $('retrySaveBtn').onclick = () => save(true);
+  $('exportWarningBtn').onclick = () => $('exportBtn').click();
   $('fullBackupBtn').onclick=()=>{ $('exportText').value=window.WTTNFullBackup.make(makeEnvelope(state),window.WTTNVisualPreferences.get().placements);$('exportFeedback').textContent='Full backup: validated progress and decoration locations. Device preferences stay local.';};
   $('progressOnlyBtn').onclick=()=>{$('exportText').value=makeEnvelope(state);$('exportFeedback').textContent='Compatible progress-only save. Local arrangements are not included.';};
   $('exportFullRecoveryBtn').onclick=()=>{const raw=storageGet(window.WTTNFullBackup.RECOVERY_KEY);if(!raw){toast('No full backup has been imported yet.');return;}$('exportText').value=raw;$('exportFeedback').textContent='Progress and arrangement from before the last full import.';$('exportDialog').showModal();};
@@ -2204,9 +2224,8 @@
   startFrameLoop();
   window.WTTN_READY = true;
   document.documentElement.dataset.boot = 'ready';
-  const storageProbeSucceeded = storageSet('wttn.storage.probe', '1');
-  $('storageWarning').classList.toggle('hidden', storageProbeSucceeded && storageAvailable && !saveQuarantined);
-  storageRemove('wttn.storage.probe');
-  if (saveQuarantined) { $('storageWarning').textContent = 'Your stored save could not be validated. Autosaving is paused to protect it. Import a known-good export, or deliberately reset the campaign in System.'; $('storageWarning').classList.remove('hidden'); }
+  // The actual save and its read-back above determine status. A second probe
+  // can fail at the storage limit even when replacing the real save succeeded.
+  if (saveQuarantined) setStorageWarning('Your stored save needs recovery. Autosaving is paused to protect it. Export your current progress, then use the recovery tools in System.');
 
 })();
