@@ -1,0 +1,37 @@
+{
+  "game": "Word to the Nations",
+  "release": "1.0.1",
+  "phase": "Pristine Phase 0 \u2014 Critical Integrity & Security",
+  "status": "pass",
+  "scope": {
+    "economy_changes": false,
+    "save_schema_change": false,
+    "storage_key_change": false,
+    "pwa_cache_version": "1.0.1"
+  },
+  "security_gates": {
+    "max_import_bytes": 2097152,
+    "unknown_import_fields_discarded": true,
+    "enum_whitelisting": true,
+    "state_strings_escaped": true,
+    "future_state_versions_rejected": true,
+    "malformed_checksum_rejected": true
+  },
+  "accessibility_gates": {
+    "modal_focus_entry": true,
+    "background_inert": true,
+    "tab_trap": true,
+    "escape_close": true,
+    "focus_restore": true,
+    "destination_tab_focus": true
+  },
+  "certified_results": {
+    "translation_automation_hours": 6.83,
+    "first_network_reference_hours": 10.17,
+    "first_field_reference_hours": 30.25,
+    "legacy_ready_reference_days": 4.34,
+    "reference_campaign_days": 12.59,
+    "active_campaign_days": 12.49,
+    "crafted_optimizer_days": 8.706
+  }
+}

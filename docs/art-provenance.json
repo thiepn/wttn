@@ -1,0 +1,51 @@
+[
+  {
+    "scene": "copying",
+    "tool": "built-in image_gen",
+    "sourceSha256": "5a7702c9e5dad4a5d60f45649120681d32afc73a464f8f521e437fb17a11982f",
+    "sourceFile": "exec-bd6d327a-1cc6-4e84-b7dd-0a03009b5981.png",
+    "processing": "Resize and WebP encode only; composition unchanged."
+  },
+  {
+    "scene": "workshop",
+    "tool": "built-in image_gen",
+    "sourceSha256": "982d733bcf44be24da8fbc70de552481dc5660896a26fec0ab1279c7f63e38cd",
+    "sourceFile": "exec-cccd5618-36c6-45be-88d8-0925ef98de4d.png",
+    "processing": "Resize and WebP encode only; composition unchanged."
+  },
+  {
+    "scene": "translation",
+    "tool": "built-in image_gen",
+    "sourceSha256": "5eb478e204f5a57426014c26585cdfc8f964753bd89cdd515c30dccb6c995032",
+    "sourceFile": "exec-2232a6f1-69c5-4f27-8262-be7ccee4183e.png",
+    "processing": "Resize and WebP encode only; composition unchanged."
+  },
+  {
+    "scene": "network",
+    "tool": "built-in image_gen",
+    "sourceSha256": "31390191c33e2961cef2731b8f37a0e3c375047cb0e0f53def85df953c4b0189",
+    "sourceFile": "exec-ac45e987-747d-42de-9a00-ab12b370f3db.png",
+    "processing": "Resize and WebP encode only; composition unchanged."
+  },
+  {
+    "scene": "field",
+    "tool": "built-in image_gen",
+    "sourceSha256": "809880d107e498eff6a2fc4a052293d4acd1cbdb6ad56758ba81f95b0c8f2d0f",
+    "sourceFile": "exec-5ccd3627-25d5-4da4-9f05-0b84dda957a9.png",
+    "processing": "Resize and WebP encode only; composition unchanged."
+  },
+  {
+    "scene": "legacy",
+    "tool": "built-in image_gen",
+    "sourceSha256": "41a96b3cebf142eefc67c92f1d937d0518152382568576a0a0e598b2e35a0d36",
+    "sourceFile": "exec-0e06aa4e-d2bd-42fa-8f12-f2502b57323a.png",
+    "processing": "Resize and WebP encode only; composition unchanged."
+  },
+  {
+    "scene": "atlas",
+    "tool": "built-in image_gen",
+    "sourceSha256": "004f57d928faffffd718af9201988f16802cc087c1dc0f57e9c7302a10ff8a04",
+    "sourceFile": "exec-f9eecfc9-5bf3-4990-ab31-8148a3608fac.png",
+    "processing": "Resize and WebP encode only; composition unchanged."
+  }
+]

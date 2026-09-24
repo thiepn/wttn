@@ -1,0 +1,1 @@
+Garden terrain repair for v2.10.1. Built-in image generation edited two native 1536×1024 terrain tiles; no external API. Original building plots and boundary registration retained. The packing script records exact masks and responsive encodings. Decorative coordinates are authored against this terrain.

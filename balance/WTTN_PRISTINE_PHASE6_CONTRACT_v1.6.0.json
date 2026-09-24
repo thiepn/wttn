@@ -1,0 +1,52 @@
+{
+  "game": "Word to the Nations",
+  "version": "1.6.0",
+  "phase": "Pristine Phase 6 — Motion & Game Feel",
+  "status": "certified",
+  "scope": "presentation-only",
+  "new_module": "motion.js",
+  "principles": {
+    "discrete_events_only": true,
+    "passive_refreshes_quiet": true,
+    "motion_required_for_comprehension": false,
+    "reduced_motion_supported": true,
+    "save_schema_changed": false,
+    "economy_changed": false
+  },
+  "event_families": [
+    "purchase",
+    "producer_milestone",
+    "project_complete",
+    "translation",
+    "network",
+    "field_enter",
+    "field_complete",
+    "legacy",
+    "library_unlock",
+    "campaign_complete",
+    "modal_arrival"
+  ],
+  "frozen_core": [
+    "bignum.js",
+    "game-core.js",
+    "save-format.js",
+    "content.js",
+    "disclosure.js",
+    "ux-architecture.js",
+    "atlas.js",
+    "art.js"
+  ],
+  "certified_results": {
+    "translation_automation_hours": 6.83,
+    "first_network_hours": 10.17,
+    "first_field_hours": 30.25,
+    "legacy_ready_days": 4.34,
+    "reference_campaign_days": 12.59,
+    "active_campaign_days": 12.49,
+    "crafted_optimizer_days": 8.706,
+    "fastest_fuzz_days": 8.452,
+    "sub8_fuzz_routes": 0,
+    "worst_sensitivity_ratio": 1.188,
+    "sensitivity_limit": 1.25
+  }
+}

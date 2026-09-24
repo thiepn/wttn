@@ -1,0 +1,20 @@
+{
+  "game": "Word to the Nations",
+  "version": "1.1.0",
+  "phase": "Pristine Phase 1 — Progressive Disclosure & Information Architecture",
+  "economyChanged": false,
+  "saveSchemaChanged": false,
+  "freshTabs": ["work", "projects", "translation", "stats", "system"],
+  "freshResources": ["pages"],
+  "reveals": {
+    "firstTranslation": ["insight", "ti"],
+    "translationMastery": ["network"],
+    "firstNetwork": ["nc"],
+    "fieldUnlock": ["fields"],
+    "firstFieldClear": ["fe"],
+    "legacyReady": ["legacy"],
+    "firstLegacy": ["legacyResource", "scripture"]
+  },
+  "contextualSurfaces": ["hero", "primaryProgress", "layerStatus", "stats", "eta", "systemAutomation", "keyboardNavigation"],
+  "pwaCachedModule": "disclosure.js"
+}

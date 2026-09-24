@@ -1,0 +1,51 @@
+{
+  "game": "Word to the Nations",
+  "version": "1.4.0",
+  "phase": "Pristine Phase 4 \u2014 Living Mission Atlas",
+  "status": "certified",
+  "scope": "signature state-driven visual system only; certified economy/save/content/disclosure/UX engines frozen",
+  "atlas": {
+    "symbolicNotGeographic": true,
+    "stages": [
+      "work",
+      "translation",
+      "network",
+      "field",
+      "legacy",
+      "complete"
+    ],
+    "work": "single prepared-page origin",
+    "translation": "branch count grows with completed Translations",
+    "network": "Local/Regional/International/Digital route weights reflect live allocation",
+    "fields": "nine canonical nodes with locked/next/active/complete states",
+    "legacy": "historical trace rings plus Mature Field counter",
+    "complete": "finished campaign-record frame",
+    "responsive": true,
+    "reducedMotion": true,
+    "contextAction": true
+  },
+  "safety": {
+    "noRealWorldGeography": true,
+    "noPeopleOrConversionCounters": true,
+    "disclaimer": "Atlas records fictional game progression and does not claim real mission work can be completed as a map."
+  },
+  "frozenFiles": {
+    "bignum.js": "e82c0610df6ba4a3c3fed209c9ff49e2d9365f380f781eb0e4207e09b7639467",
+    "game-core.js": "11c6aca3be70a43ccef38742ecb0d291e2802b68ba7980a80646a31aaf7f8bb6",
+    "save-format.js": "9b90e1c305a86490aa5ffa22269ef4720fdf98dce2614047a68b6d9c089fab50",
+    "content.js": "a66f3c809fbd2083ffa67e04f8c92e79fa8cc7e3c657ac13e517b0e5721f9465",
+    "disclosure.js": "d6e880c05265697ace9af619738bee379e76745f790b590140159b07efaec1e4",
+    "ux-architecture.js": "1fee55573b878215b029a8b0917b4f25842ba4ea58b3b4af9bb1b433d05175cc"
+  },
+  "certifiedResults": {
+    "translationAutomationHours": 6.83,
+    "firstNetworkHours": 10.17,
+    "firstFieldHours": 30.25,
+    "legacyReadyDays": 4.34,
+    "referenceCampaignDays": 12.59,
+    "activeCampaignDays": 12.49,
+    "craftedOptimizerDays": 8.706,
+    "fuzzFastestDays": 8.452,
+    "sensitivityWorstRatio": 1.188
+  }
+}

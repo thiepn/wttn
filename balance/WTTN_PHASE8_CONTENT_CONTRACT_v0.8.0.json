@@ -1,0 +1,40 @@
+{
+  "game": "Word to the Nations",
+  "phase": "8",
+  "version": "0.8.0",
+  "scope": "Content & Scripture Pass",
+  "mechanicsFrozen": true,
+  "saveSchemaChanged": false,
+  "scripture": {
+    "quotationPolicy": "references-only",
+    "referenceEntries": 125,
+    "journalMilestones": 10,
+    "numericalVerseBonuses": false
+  },
+  "guardrails": [
+    "No sacred-outcome currencies",
+    "People are never a resource",
+    "Mission Fields are fictional strategic contexts",
+    "Legacy is not spiritual merit",
+    "Campaign completion is not real-world mission completion"
+  ],
+  "coreHashes": {
+    "bignum.js": "e82c0610df6ba4a3c3fed209c9ff49e2d9365f380f781eb0e4207e09b7639467",
+    "game-core.js": "6c89c0bdfeeb4cae77ce2a43c7976fe1e7df4966fb6b48aed1781f11e1686889",
+    "save-format.js": "d9d2abbda014268e0284f3cc01cec64f04c4e2368180bc690f47e2a7031abd31"
+  },
+  "contentFiles": {
+    "content.js": "a2973adea3603a98165d166dec4c53011034c2a37663c8084465317f8e716563",
+    "app.js": "05a00dea10bec0c99c33c784639d03e58088a2ced663d3fd36c5a750c267c737",
+    "styles.css": "b98dd911f5337c227aa717d67706993dd923f8b5ef8c0067d938279f732a5cfa",
+    "index.html": "942e43fa7d815593bbf3dae797e0389290626a2db39c3e76784a1b70e1b410cd"
+  },
+  "certifiedTimings": {
+    "translationAutomationHours": 6.83,
+    "firstNetworkHours": 10.17,
+    "firstFieldHours": 30.25,
+    "firstLegacyDays": 4.34,
+    "allCanonicalFieldsDays": 8.16,
+    "campaignCompleteDays": 12.65
+  }
+}

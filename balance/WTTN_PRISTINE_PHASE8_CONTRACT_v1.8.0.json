@@ -1,0 +1,43 @@
+{
+  "game": "Word to the Nations",
+  "version": "1.8.0",
+  "phase": "Pristine Phase 8 — Early Game Perfection",
+  "scope": "0 Pages through first Translation; presentation/onboarding only",
+  "economy_changed": false,
+  "first_translation": {
+    "threshold_peak_pages": "1e12",
+    "reset_available_when_threshold_reached": true,
+    "recommended_window_minutes": [35, 45],
+    "hard_time_gate": false
+  },
+  "reference_first_run_minutes": {
+    "first_scribe": 0.25,
+    "first_copyist": 0.75,
+    "first_editor": 2.25,
+    "first_teacher": 4.75,
+    "first_project": 8.75,
+    "all_projects": 14.0,
+    "first_scriptorium": 23.25,
+    "translation_threshold": 23.70,
+    "mature_guidance": 35.0
+  },
+  "journey_chapters": [
+    "Establish the work",
+    "Complete Projects",
+    "Reach Translation",
+    "Choose the reset"
+  ],
+  "guardrails": {
+    "no_modal_tutorial_chain": true,
+    "no_balance_changes": true,
+    "no_forced_reset_timer": true,
+    "guide_disappears_after_first_translation": true,
+    "future_layers_remain_progressively_disclosed": true
+  },
+  "certification": {
+    "fastest_fuzz_days": 8.452,
+    "sub8_fuzz_routes": 0,
+    "worst_sensitivity_ratio": 1.188,
+    "sensitivity_limit": 1.25
+  }
+}

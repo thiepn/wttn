@@ -1,0 +1,22 @@
+/* Shared read-only disclosures. Economic commands remain in the frozen core. */
+(function(root,factory){const api=factory(typeof module==='object'&&module.exports?require('./game-core'):root.WTTNCore);if(typeof module==='object'&&module.exports)module.exports=api;root.WTTNPresentationDisclosure=api;})(globalThis,function(G){'use strict';
+ const people={scribe:'Scribe',copyist:'Copyist',editor:'Editor',teacher:'Teacher',workshop:'workshop team',scriptorium:'library section'};
+ const referenceDescription='Equips reference shelves and opens detailed production relationships and commission comparisons. No direct production multiplier.';
+ function methodDescription(def){if(def.id==='reference')return referenceDescription;if(def.target)return `${people[def.target]} production is multiplied by ${def.mult}.`;if(def.globalMult)return `Production from all six building types is multiplied by ${def.globalMult}. The base 2 Pages/sec is unchanged.`;return def.description;}
+ function milestone(s,id){const n=G.nextMilestone(s.producers[id]);if(n===null)return 'Mastery achieved · completed-work display';if(n===100&&id==='scriptorium')return 'At 100: Library organization and storage. This highest building has no higher-building synergy.';if(n===100)return `At 100: stronger benefit from the next building (+0.05 to this building’s synergy exponent).`;if(n===500)return 'At 500: mastery banner and completed-work display';return `At ${n}: ${people[id]} production ×${Number((G.milestoneMultiplier(n,s)/G.milestoneMultiplier(s.producers[id],s)).toFixed(3))}.`;}
+ function commission(s,id){
+  const def=G.PROJECTS.find(x=>x.id===id);if(!def)return null;
+  const status=G.projectStatus(s,id),before=G.pageProduction({...s,projects:{...s.projects,[id]:false}}),after=G.pageProduction({...s,projects:{...s.projects,[id]:true}});
+  const fraction=id==='manuscript'?Math.min(.20,.20*G.allocationEffects(s).digitalProjectDivisor):0;
+  return {id,name:def.name,status,threshold:G.projectThreshold(s,id),dependencies:(def.requires||[]).map(k=>({id:k,name:G.PROJECTS.find(p=>p.id===k).name,complete:!!s.projects[k]})),investment:s.pages.mul(fraction),investmentFraction:fraction,before,after,ratio:after.div(before),gain:after.sub(before),effect:id==='reference'?'Adds 0.05 to the synergy exponent before Training. Each higher building strengthens the building immediately below it; the benefit grows as that higher workforce grows.':`Current-run production ×${after.div(before).format(3)}.`,assumption:'Comparison uses the current workforce, approach, allocations and Field. It changes as those change.'};
+ }
+ function reference(s){
+  if(!s.pageUpgrades.reference)return null;
+  const contributions={};G.pageProduction(s,contributions);const allocation=G.allocationEffects(s),field=G.currentField(s);
+  const factors=[['Workflow',G.workflowMultiplier(s)],['Scholar development',G.scholarMultiplier(s)],['Network infrastructure',G.networkInfrastructureMultiplier(s)],['Legacy experience',G.legacyPowerMultiplier(s)],['Local allocation',allocation.local],['Regional allocation',allocation.regional],['Field production',field?.pageMultiplier||1],['Field direct production',field?.directProducerMultiplier||1]];
+  for(const method of G.PAGE_UPGRADES)if(s.pageUpgrades[method.id]&&method.globalMult)factors.push([method.name,method.globalMult]);
+  for(const id of ['manuscript','teaching'])if(s.projects[id])factors.push([G.PROJECTS.find(p=>p.id===id).name,commission(s,id).ratio.toNumber()]);
+  return {description:referenceDescription,total:G.pageProduction(s),base:G.pageProduction({...s,producers:Object.fromEntries(G.PRODUCERS.map(p=>[p.id,0]))}),factors:factors.filter(([,value])=>value!==1),relationships:G.PRODUCERS.map((p,i)=>{const higher=G.PRODUCERS[i+1],owned=s.producers[p.id],method=G.PAGE_UPGRADES.find(u=>u.target===p.id);return {id:p.id,name:p.name,owned,baseRate:p.production,contribution:contributions[p.id]||G.bn(0),milestoneFactor:G.milestoneMultiplier(owned,s),methodFactor:method&&s.pageUpgrades[method.id]?method.mult:1,higherId:higher?.id||null,higherName:higher?.name||null,higherOwned:higher?s.producers[higher.id]:0,exponent:G.synergyExponent(s,p.id),synergy:higher?(1+s.producers[higher.id]/25)**G.synergyExponent(s,p.id):1,fieldFactor:p.id==='teacher'?field?.teacherMultiplier||1:1};}),commissions:G.PROJECTS.map(p=>commission(s,p.id))};
+ }
+ return {referenceDescription,methodDescription,milestone,commission,reference};
+});

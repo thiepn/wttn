@@ -1,0 +1,67 @@
+{
+  "game": "Word to the Nations",
+  "phase": 9,
+  "version": "0.9.0",
+  "status": "certified",
+  "scope": "Full Balance Regression & Real-Game Certification",
+  "sourceOfTruth": "The Phase 8 playable browser build and its actual game-core.js economy.",
+  "campaignGates": {
+    "optimizedFloorDays": 8,
+    "referenceTargetDays": [10, 14.5],
+    "casualEnvelopeDays": [13, 22],
+    "translationCollapseSeconds": 90,
+    "networkCollapseSeconds": 300,
+    "sensitivityMaxRatio": 1.25
+  },
+  "phase9Fixes": {
+    "repeatLegacyReadiness": {
+      "targetSeconds": 108000,
+      "targetHours": 30,
+      "power": 1.2,
+      "minimumFactor": 0.25,
+      "firstLegacyExempt": true,
+      "reason": "Adversarial testing found that repeat Legacy resets had no readiness compression and enabled a 6.19-day campaign route."
+    },
+    "legacyScale": {
+      "before": 15,
+      "after": 15.5,
+      "firstThresholdRewardStill": 15,
+      "reason": "Removes a discrete ±10% sensitivity cliff where a 10% lower scale forced an extra multi-day Legacy cycle."
+    }
+  },
+  "certifiedResults": {
+    "inheritedReferenceDays": 12.59,
+    "phase9NormalDays": 13.226,
+    "phase9ActiveDays": 12.49,
+    "phase9CasualDays": 17.021,
+    "craftedOptimizerDays": 8.706,
+    "randomFuzzFastestDays": 8.452,
+    "randomFuzzCases": 12,
+    "sensitivityWorstRatio": 1.188,
+    "sensitivityPerturbation": "+/-10%",
+    "scriptureReferences": 125,
+    "journalMilestones": 10
+  },
+  "sensitivityParameters": [
+    "translationExponent",
+    "networkBaseThreshold",
+    "fieldRewardScale",
+    "legacyUnlockFE",
+    "legacyExponent",
+    "legacyScale",
+    "legacyReadinessTarget"
+  ],
+  "strategyProfiles": [
+    "normal",
+    "active",
+    "crafted optimizer",
+    "casual after early game",
+    "repeatables-first",
+    "12 deterministic randomized exploit strategies"
+  ],
+  "saveCertification": {
+    "checkpoints": ["first-network", "first-field", "first-legacy", "all-canonical-fields", "campaign-complete"],
+    "checksummedEnvelopeRoundTrip": true,
+    "campaignStatePreserved": true
+  }
+}

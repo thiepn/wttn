@@ -1,0 +1,85 @@
+{
+  "game": "Word to the Nations",
+  "version": "2.3.0",
+  "phase": "Pristine Phase 13 \u2014 Accessibility, Mobile & Platform Excellence",
+  "status": "complete-with-documented-environment-limitations",
+  "scope": "presentation-input-accessibility-platform-only",
+  "baseline": "2.2.0",
+  "saveSchema": 6,
+  "uiPreferences": {
+    "storageKey": "wttn.ui.preferences.v1",
+    "separateFromGameSave": true,
+    "motion": [
+      "system",
+      "reduce"
+    ],
+    "textScale": [
+      "100",
+      "110",
+      "120"
+    ],
+    "contrast": [
+      "system",
+      "high"
+    ]
+  },
+  "responsive": {
+    "viewportsPassed": [
+      "320x568",
+      "360x640",
+      "390x844",
+      "412x915",
+      "430x932",
+      "600x960",
+      "768x1024",
+      "820x1180",
+      "1024x768",
+      "1280x720",
+      "1366x768",
+      "1440x900",
+      "1920x1080"
+    ],
+    "bodyOverflowFailures": 0,
+    "runtimeErrors": 0
+  },
+  "accessibility": {
+    "keyboardTablist": true,
+    "modalFocusTrap": true,
+    "focusRestoration": true,
+    "atlasKeyboardNodes": true,
+    "reducedMotion": true,
+    "forcedColors": true,
+    "prefersContrast": true,
+    "coarsePointerTargets": true,
+    "semanticAuditUnlabeledVisibleControls": 0
+  },
+  "platform": {
+    "manifestStandalone": true,
+    "displayOverride": [
+      "standalone",
+      "minimal-ui"
+    ],
+    "maskableIcon": true,
+    "hiddenRafPaused": true,
+    "pagehideSave": true,
+    "resumeOfflineSimulationPreserved": true,
+    "httpShellAssets200": true
+  },
+  "regression": {
+    "packageTestConstituentsPassed": 25,
+    "sensitivityCorePassed": true,
+    "sensitivityMetaPassed": true,
+    "fuzzRoutesPassed": 12,
+    "frozenGameplayContentHashesVerified": 14,
+    "phase12ContentVersionPreserved": "2.2.0"
+  },
+  "limitations": [
+    "no physical-device QA",
+    "no Safari/WebKit runtime QA",
+    "no Firefox runtime QA",
+    "no real screen-reader session",
+    "no formal WCAG certification",
+    "no true browser 200% zoom run",
+    "Chromium runner blocks localhost/file navigation so service-worker install flow not browser-exercised"
+  ]
+}

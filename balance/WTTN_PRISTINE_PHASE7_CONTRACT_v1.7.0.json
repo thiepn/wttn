@@ -1,0 +1,27 @@
+{
+  "game": "Word to the Nations",
+  "version": "1.7.0",
+  "phase": "Pristine Phase 7 — Sound & Audio Identity",
+  "status": "certified",
+  "audio": {
+    "default_enabled": false,
+    "ambient_default_enabled": false,
+    "storage_key": "wttn.audio.v1",
+    "procedural_web_audio": true,
+    "bundled_audio_files": 0,
+    "categories": ["ui", "milestones", "ambient"],
+    "controls": ["master", "ui", "milestones", "ambient"],
+    "requires_user_gesture": true,
+    "campaign_save_schema_changed": false
+  },
+  "frozen_engines": ["bignum.js", "game-core.js", "save-format.js", "content.js", "disclosure.js", "ux-architecture.js", "atlas.js", "art.js", "motion.js"],
+  "certification": {
+    "reference_campaign_days": 12.59,
+    "active_campaign_days": 12.49,
+    "crafted_optimizer_days": 8.706,
+    "fastest_fuzz_days": 8.452,
+    "sub8_fuzz_routes": 0,
+    "worst_sensitivity_ratio": 1.188,
+    "sensitivity_limit": 1.25
+  }
+}

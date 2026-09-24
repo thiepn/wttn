@@ -1,0 +1,35 @@
+{
+  "game": "Word to the Nations",
+  "release": "1.0.0",
+  "status": "release-ready",
+  "progressionChanges": false,
+  "saveSchemaChanges": false,
+  "pwa": {
+    "manifest": "manifest.webmanifest",
+    "serviceWorker": "sw.js",
+    "display": "standalone",
+    "offlineShell": true,
+    "explicitUpdateActivation": true,
+    "githubPagesNoJekyll": true
+  },
+  "frozenPhase9Hashes": {
+    "bignum.js": "e82c0610df6ba4a3c3fed209c9ff49e2d9365f380f781eb0e4207e09b7639467",
+    "game-core.js": "3515dc73295d90c161d0da8c8c7708de9cc203add980abd1b8c0984f9330e6b1",
+    "save-format.js": "d9d2abbda014268e0284f3cc01cec64f04c4e2368180bc690f47e2a7031abd31",
+    "content.js": "a66f3c809fbd2083ffa67e04f8c92e79fa8cc7e3c657ac13e517b0e5721f9465"
+  },
+  "certifiedCampaign": {
+    "referenceDays": 12.59,
+    "activeDays": 12.49,
+    "craftedOptimizerDays": 8.706,
+    "phase9FastestFuzzDays": 8.452,
+    "optimizedFloorDays": 8
+  },
+  "releaseGates": {
+    "missingDomReferences": 0,
+    "duplicateIds": 0,
+    "pwaAssetsRequired": true,
+    "temporaryBalanceArtifactsForbidden": true,
+    "coreHashMatchRequired": true
+  }
+}

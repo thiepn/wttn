@@ -1,0 +1,63 @@
+{
+  "game": "Word to the Nations",
+  "version": "1.3.0",
+  "phase": "Pristine Phase 3 \u2014 Typography, Readability & Density",
+  "status": "certified",
+  "scope": "presentation-only",
+  "typography": {
+    "bodyPx": 16,
+    "secondaryPx": 14,
+    "metadataPx": 13,
+    "labelFloorPx": 11,
+    "explicitBelow11px": 0,
+    "previousAtOrBelow11px": 54
+  },
+  "contrast": {
+    "minimumRequired": 4.5,
+    "mutedOnPaper": 5.286,
+    "inactiveTabOnPaper": 5.138,
+    "warmOnPaper": 5.799,
+    "dangerOnPaper": 5.349,
+    "workWhite": 4.657,
+    "translationWhite": 5.39,
+    "networkWhite": 5.869,
+    "fieldWhite": 5.681,
+    "legacyWhite": 6.39,
+    "scriptureWhite": 5.644
+  },
+  "density": {
+    "desktopMaxWidthPx": 1320,
+    "producerGridGapPx": 12,
+    "generalCardGapPx": 14,
+    "mobileBodyPx": 16,
+    "mobilePrimaryTouchMinPx": 44
+  },
+  "frozenFiles": [
+    "bignum.js",
+    "game-core.js",
+    "save-format.js",
+    "content.js",
+    "disclosure.js",
+    "ux-architecture.js"
+  ],
+  "regression": {
+    "translationAutomationHours": 6.83,
+    "firstNetworkHours": 10.17,
+    "firstFieldHours": 30.25,
+    "legacyReadyDays": 4.34,
+    "referenceCampaignDays": 12.59,
+    "activeCampaignDays": 12.49,
+    "craftedOptimizerDays": 8.706,
+    "fuzzFastestDays": 8.452,
+    "sub8FuzzRoutes": 0,
+    "sensitivityWorstRatio": 1.188
+  },
+  "gates": {
+    "noExplicitTextBelow11px": true,
+    "smallTextContrastAA": true,
+    "coreHashesUnchanged": true,
+    "domMissingReferences": 0,
+    "duplicateIds": 0,
+    "httpAssets": true
+  }
+}

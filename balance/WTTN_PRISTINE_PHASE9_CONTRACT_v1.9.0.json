@@ -1,0 +1,118 @@
+{
+  "game": "Word to the Nations",
+  "version": "1.9.0",
+  "phase": "Pristine Phase 9 \u2014 Translation & Network Depth Pass",
+  "status": "certified",
+  "scope": {
+    "hours": "approximately 1\u201330",
+    "newCurrencies": 0,
+    "newPrestigeLayers": 0,
+    "saveSchema": 6
+  },
+  "translation": {
+    "publisherReadinessMultiplier": 0.85,
+    "scholarTiDividend": {
+      "startsAfterSeconds": 1200,
+      "asymptoticMultiplier": 1.1,
+      "timeConstantSeconds": 1200
+    },
+    "teacherTiPerCompletedProject": 0.03,
+    "teacherTiMaxMultiplier": 1.09,
+    "autoProfiles": [
+      "active",
+      "balanced",
+      "idle"
+    ]
+  },
+  "networkSynergies": {
+    "localRegional": {
+      "recoveryBridgeCoefficient": 0.25,
+      "regionalCoefficient": 0.1
+    },
+    "internationalDigital": {
+      "insightBridgeCoefficient": 0.2
+    },
+    "regionalDigital": {
+      "projectBridgeCoefficient": 0.15
+    }
+  },
+  "allocationTemplates": {
+    "recovery": [
+      0.5,
+      0.3,
+      0.1,
+      0.1
+    ],
+    "balanced": [
+      0.25,
+      0.25,
+      0.25,
+      0.25
+    ],
+    "projects": [
+      0.2,
+      0.3,
+      0.2,
+      0.3
+    ],
+    "translation": [
+      0.1,
+      0.4,
+      0.4,
+      0.1
+    ]
+  },
+  "certifiedReference": {
+    "translationAutomationHours": 6.83,
+    "firstNetworkHours": 10.17,
+    "firstFieldHours": 30.25,
+    "legacyReadyDays": 4.27,
+    "allCanonicalFieldsDays": 8.02,
+    "referenceCampaignDays": 12.44
+  },
+  "strategyCertification": {
+    "normalDays": 13.229,
+    "activeDays": 12.529,
+    "craftedOptimizerDays": 8.638,
+    "casualAfterEarlyDays": 17.146,
+    "repeatablesFirstDays": 12.84,
+    "randomFuzzFastestDays": 8.174,
+    "randomFuzzSub8Routes": 0
+  },
+  "sensitivity": {
+    "baselineActiveDays": 12.529,
+    "maxAllowedRatio": 1.25,
+    "worstObservedRatio": 1.186,
+    "status": "pass"
+  },
+  "unchangedFromV1_8": [
+    "bignum.js",
+    "save-format.js",
+    "disclosure.js",
+    "ux-architecture.js",
+    "atlas.js",
+    "art.js",
+    "motion.js",
+    "audio.js",
+    "early-game.js"
+  ],
+  "intentionallyChanged": [
+    "game-core.js",
+    "content.js",
+    "app.js",
+    "styles.css",
+    "index.html",
+    "sw.js",
+    "package.json"
+  ],
+  "newFiles": [
+    "midgame-depth.js",
+    "tests/pristine-phase9-depth.test.js"
+  ],
+  "hardGates": {
+    "campaignFloorDays": 8,
+    "translationResetCollapseSeconds": 90,
+    "networkResetCollapseSeconds": 300,
+    "sensitivityMaxRatio": 1.25
+  }
+}

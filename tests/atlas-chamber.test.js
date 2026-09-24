@@ -1,0 +1,12 @@
+const fs=require('fs'),path=require('path'),crypto=require('crypto'),assert=require('assert/strict');
+const root=path.resolve(__dirname,'..'),read=f=>fs.readFileSync(path.join(root,f),'utf8');
+const baseline=JSON.parse(read('docs/atlas-baseline-hashes.json'));
+for(const [f,sha] of Object.entries(baseline).filter(([f])=>["bignum.js","save-format.js"].includes(f)))assert.equal(crypto.createHash('sha256').update(fs.readFileSync(path.join(root,f))).digest('hex'),sha,f+' must remain byte-identical');
+const web=read('dist/web/index.html'),html=read('index.html'),app=read('app.js');
+assert(web.includes(JSON.parse(read('dist/build-manifest.json')).assets['settlement-scene.js']));
+assert(Buffer.byteLength(read('settlement-scene.js'))<18000,'room controller budget is 18 KB');
+assert(JSON.parse(read('dist/build-manifest.json')).initialPlayableBytes<=5000000,'initial web budget is 5 MB');
+for(const id of ['settlementCanvas','selectionTray','buildingList','resourceReadout','atlasDossier','atlasDossierGo','atlasDossierClose'])assert(html.includes('id="'+id+'"'));
+assert(app.includes("if (btn.getAttribute('aria-disabled') === 'true') return;"),'Unavailable producer controls must not purchase');
+assert(!app.includes("atlasScale=1; $('atlasSvg').style.width='100%'"),'Closing Atlas must preserve view');
+console.log('Atlas Chamber: PASS · 2 protected numeric/save-envelope hashes · external art and web byte budgets · focusable unavailable commands · preserved Atlas view');

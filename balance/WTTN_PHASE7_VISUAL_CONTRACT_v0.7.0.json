@@ -1,0 +1,31 @@
+{
+  "game": "Word to the Nations",
+  "release": "0.7.0",
+  "phase": "Full Visual Design",
+  "economyChanges": false,
+  "saveSchemaChanges": false,
+  "preservedSaveKey": "wttn.phase6.save.v6",
+  "visualDirection": "modern editorial Bible publishing + mission atlas + archival manuscript craft",
+  "layerIdentity": {
+    "work": "#b45b3f",
+    "translation": "#426e95",
+    "network": "#9d762e",
+    "fields": "#6e5f8f",
+    "legacy": "#934851",
+    "scripture": "#3f715a"
+  },
+  "coreFilesUnchangedFromPhase6": ["bignum.js", "game-core.js", "save-format.js"],
+  "regression": {
+    "translationAutomationHours": 6.83,
+    "firstNetworkHours": 10.17,
+    "legacyReadyDays": 4.34,
+    "campaignCompleteDays": 12.65
+  },
+  "staticAudit": {
+    "htmlIds": 200,
+    "domReferences": 235,
+    "missingDomReferences": 0,
+    "duplicateIds": 0,
+    "cssParseErrors": 0
+  }
+}

@@ -1,0 +1,73 @@
+{
+  "game": "Word to the Nations",
+  "prototype": "0.2.0",
+  "status": "certified",
+  "campaign": {
+    "optimized_floor_days": 8,
+    "normal_target_days": [10, 14],
+    "certification_envelope_days": [8, 16],
+    "adversarial_max_days": 26
+  },
+  "tuning": {
+    "translationExponent": 0.65,
+    "networkBaseThreshold": 2800,
+    "fieldRewardScale": 10,
+    "legacyThresholdFE": 70,
+    "legacyExponent": 0.6,
+    "legacyScale": 15
+  },
+  "resetReadiness": {
+    "translation": {
+      "preNetworkTargetSeconds": 600,
+      "postNetworkTargetSeconds": 1200,
+      "power": 1.2,
+      "minimumFactor": 0.25
+    },
+    "network": {
+      "targetSeconds": 7200,
+      "power": 1.1,
+      "minimumFactor": 0.3
+    }
+  },
+  "growthBudgets": {
+    "total": 2.65,
+    "translation": 0.85,
+    "network": 0.7,
+    "field": 0.6,
+    "legacy": 0.5,
+    "certifiedUsedTotal": 1.414
+  },
+  "specializations": ["scholar", "publisher", "teacher"],
+  "specializationSpreadMax": 1.1,
+  "canonicalFields": [
+    { "id": "urban", "tier": 1, "ncThreshold": 2, "allocationCap": 0.4, "validNetworks": 1 },
+    { "id": "remote", "tier": 1, "ncThreshold": 3, "pageMultiplier": 0.6, "localCap": 0.2, "validNetworks": 1 },
+    { "id": "oral", "tier": 1, "ncThreshold": 4, "directProducerMultiplier": 0.7, "teacherMultiplier": 2, "projectMultiplier": 2, "validNetworks": 1 },
+    { "id": "restricted", "tier": 1, "ncThreshold": 5, "pageMultiplier": 0.82, "autoTranslationTiGate": 1000, "validNetworks": 1 },
+    { "id": "multilingual", "tier": 1, "ncThreshold": 6, "translationThresholdMultiplier": 10, "tiMultiplier": 1.5, "validNetworks": 1, "translations": 3 },
+    { "id": "urban-ii", "tier": 2, "ncThreshold": 10, "pageMultiplier": 0.75, "allocationCap": 0.4, "digitalMin": 0.2, "validNetworks": 2 },
+    { "id": "remote-ii", "tier": 2, "ncThreshold": 15, "pageMultiplier": 0.5, "localCap": 0.1, "preparationCap": 3, "validNetworks": 2 },
+    { "id": "multilingual-ii", "tier": 2, "ncThreshold": 20, "translationThresholdMultiplier": 25, "tiMultiplier": 1.4, "internationalCap": 0.4, "validNetworks": 2, "translations": 5 },
+    { "id": "frontier-iii", "tier": 3, "ncThreshold": 35, "pageMultiplier": 0.45, "allocationCap": 0.4, "autoTranslationTiGate": 2500, "preparationCap": 2, "requireAllProjects": true, "validNetworks": 3, "translations": 8 }
+  ],
+  "hardGates": {
+    "sub8DayCampaignForbidden": true,
+    "translationResetCollapseSeconds": 90,
+    "networkResetCollapseSeconds": 300,
+    "normalMeaningfulDeadZoneMaxSeconds": 7200,
+    "sensitivityMaxRatio": 1.25
+  },
+  "certifiedResults": {
+    "activeFrequentDays": 13.952,
+    "normalDays": 13.448,
+    "casualDays": 13.813,
+    "aggressiveOptimizedDays": 8.289,
+    "bestRandomAdversarialDays": 9.142,
+    "specializationDays": {
+      "publisher": 13.448,
+      "scholar": 13.552,
+      "teacher": 13.806
+    },
+    "tests": { "passed": 14, "failed": 0 }
+  }
+}

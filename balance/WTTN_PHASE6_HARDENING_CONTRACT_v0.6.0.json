@@ -1,0 +1,92 @@
+{
+  "game": "Word to the Nations",
+  "phase": 6,
+  "version": "0.6.0",
+  "status": "certified-hardening",
+  "scope": "UX & Automation Hardening",
+  "progression": {
+    "frozenFrom": "Phase 5 v0.5.0",
+    "newPrestigeLayers": 0,
+    "newAsymptoticMultipliers": 0,
+    "economyIntent": "No Phase 6 feature may add hidden economic power; controls may only expose, pause, recover, simulate, or explain already-unlocked systems.",
+    "reference": {
+      "translationAutomationHours": 6.83,
+      "firstNetworkHours": 10.17,
+      "firstFieldHours": 30.25,
+      "firstLegacyDays": 4.34,
+      "allCanonicalFieldsDays": 8.16,
+      "campaignCompleteDays": 12.65
+    }
+  },
+  "offline": {
+    "enabledByDefault": true,
+    "minimumGapSeconds": 5,
+    "economyStepSeconds": 10,
+    "defaultCapDays": 14,
+    "selectableCapDays": [1, 7, 14, 30],
+    "exactLiveEconomyCadence": true,
+    "higherLayerResetsRemainManual": true,
+    "reference14DayRuntimeMs": 1125,
+    "runtimeGateMs": 5000
+  },
+  "saves": {
+    "storageKey": "wttn.phase6.save.v6",
+    "backupKey": "wttn.phase6.backup.v6",
+    "envelopeSchema": 1,
+    "checksum": "FNV-1a-style 32-bit corruption check",
+    "automaticRecoverySnapshot": true,
+    "legacyMigrationKeys": [
+      "wttn.phase5.save.v5",
+      "wttn.phase4.save.v4",
+      "wttn.phase3.save.v3",
+      "wttn.phase2.save.v2",
+      "wttn.phase1.save.v1"
+    ],
+    "importValidation": true,
+    "structuralSanitization": true,
+    "tamperOrCorruptionDetection": true,
+    "cryptographicAuthentication": false
+  },
+  "automation": {
+    "runtimePauseControls": ["base", "projects", "translation"],
+    "pauseRemovesUnlock": false,
+    "autoTranslationSettings": ["enabled", "minRun", "resetMultiple", "maxRun"],
+    "offlineUsesSameSettings": true
+  },
+  "diagnostics": {
+    "etaCards": true,
+    "offlineHistory": true,
+    "saveHealth": true,
+    "recoveryCount": true,
+    "debugSnapshot": true
+  },
+  "accessibility": {
+    "skipLink": true,
+    "mainLandmark": true,
+    "tablistSemantics": true,
+    "keyboardTabNavigation": true,
+    "globalShortcuts": true,
+    "focusVisible": true,
+    "reducedMotion": true,
+    "mobileMinimumTargets": true
+  },
+  "performance": {
+    "uiRenderIntervalMs": 500,
+    "autosaveIntervalMs": 10000,
+    "maxAffordableCountComputedOnlyWhenMaxSelected": true,
+    "offlineWorkBoundedByCap": true
+  },
+  "validation": {
+    "phase2Regression": "PASS",
+    "specializationRegression": "PASS",
+    "phase3Regression": "PASS",
+    "phase4Regression": "PASS",
+    "phase5Regression": "PASS",
+    "phase6CoreHardening": "PASS",
+    "staticDomAudit": "PASS",
+    "httpAssetSmoke": "PASS",
+    "missingDomReferences": 0,
+    "duplicateIds": 0,
+    "browserRuntimeSmoke": "ENVIRONMENT_BLOCKED_BY_CHROMIUM_ORGANIZATION_POLICY"
+  }
+}

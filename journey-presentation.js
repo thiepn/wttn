@@ -1,0 +1,35 @@
+(function(root){'use strict';
+const A=root.WTTNSettlementArt,G=root.WTTNCore,P=root.WTTNVisualPreferences;let selectedField=null,lastScene='',lastRequest='',currentTab='',loader,open,canvas,raf=null,lastPaint=0;
+const labels={urban:'Work among the city courtyards',remote:'Patient work beyond the familiar roads',oral:'Listen, remember, and teach together',restricted:'Careful work in a quiet room',multilingual:'Many languages, shared understanding',frontier:'Prepare for a longer journey',translation:'Prepared pages, ready to travel',network:'Connections that carry the work',legacy:'What one generation leaves for the next'};
+function archetype(id){return ['urban','remote','oral','restricted','multilingual','frontier'].find(k=>String(id).startsWith(k))||'frontier';}
+function show(key,name){const target=document.getElementById('journeyIllustration'),level=P.quality()==='low'?'low':innerWidth<700?'medium':'high',request=key+':'+level;target.setAttribute('aria-label',name||labels[key]);if(lastRequest===request)return;lastRequest=request;const changed=lastScene!==key;lastScene=key;loader.prioritize([key,'environment-activity','worker-variants']);for(const k of ['environment-activity','worker-variants','work-props','campaign-keepsakes'])loader.load(k,P.quality()==='low'?'low':'medium');if(changed)target.style.backgroundImage=`url("${A.assets.journey.src}")`;document.getElementById('journeySceneCaption').textContent=name||labels[key];loader.load(key,level).then(img=>{if(img&&lastRequest===request)target.style.backgroundImage=`url("${img.src}")`;});}
+function animate(now){raf=null;if(document.hidden||document.body.dataset.surface!=='journey')return;
+ if(now-lastPaint>32){lastPaint=now;const box=canvas.parentElement.getBoundingClientRect();if(canvas.width!==Math.round(box.width)||canvas.height!==Math.round(box.height)){canvas.width=Math.round(box.width);canvas.height=Math.round(box.height);}const c=canvas.getContext('2d'),w=canvas.width,h=canvas.height,still=P.reduced();c.clearRect(0,0,w,h);
+ function item(key,n,x,y,size,alpha=1,angle=0){const im=loader.get(key),s=A.assets[key],r=s?.regions?.[n];if(!im||!r)return;const f=im.naturalWidth/s.sourceWidth,hh=size*r[3]/r[2];c.save();c.globalAlpha=alpha;c.translate(x,y);c.rotate(angle);c.drawImage(im,r[0]*f,r[1]*f,r[2]*f,r[3]*f,-size/2,-hh,size,hh);c.restore();}
+ const roles={translation:['stack','carry','carry'],network:['carry','check'],legacy:['check','write'],urban:['teach','listen','listen'],remote:['carry','carry'],oral:['teach','listen','listen'],restricted:['write','check'],multilingual:['check','teach'],frontier:['stack','carry']}[lastScene]||[];
+ roles.forEach((role,i)=>{const phase=still?.22:(now/(5400+i*1100)+i*.28)%1,walk=role==='carry',travel=still?.45:(now/(16000+i*4000)+i*.31)%1,x=w*(.28+i*.15+(walk?Math.sin(travel*Math.PI*2)*.10:0)),y=h*(.83+i%2*.06);root.WTTNWorkerPainter.draw(c,A,loader,{x,y,scale:Math.max(.27,w/1000),variant:i%3,routine:role,walking:walk&&!still,carrying:walk,flip:walk&&travel>.5,phase,pose:root.WTTNSettlementClips.pose(role,phase,still)},still);});
+ if(lastScene==='network'){c.strokeStyle='#f7eac0';c.lineWidth=2;c.setLineDash([4,7]);c.lineDashOffset=still?0:-now/350;c.beginPath();c.moveTo(w*.18,h*.77);c.quadraticCurveTo(w*.55,h*.93,w*.72,h*.39);c.lineTo(w*.89,h*.58);c.stroke();c.setLineDash([]);}
+ if(['restricted','legacy'].includes(lastScene))item('environment-activity',5,w*.48,h*.72,w*.35,still?.15:.16+Math.sin(now/4000)*.04);
+ else if(!still&&now%55000<12000)item('environment-activity',1,w*(now%55000)/12000,h*.18,40,.6);
+ const tier=Number(canvas.parentElement.dataset.tier||1),pattern=canvas.parentElement.dataset.pattern;if(tier>1)item('campaign-keepsakes',tier>2?4:2,w*.85,h*.94,w*.12);if(pattern)item('campaign-keepsakes',{stewardship:3,translation:0,distribution:1,integration:5}[pattern]??4,w*.14,h*.93,w*.12);
+ }
+ if(!P.reduced())raf=requestAnimationFrame(animate);
+}
+function start(){if(raf===null&&!document.hidden&&canvas)raf=requestAnimationFrame(animate);}
+function init(openScreen){open=openScreen;loader=root.WTTNAssetLoader.shared(A.assets,{maxBytes:innerWidth<700?48*1024*1024:96*1024*1024});loader.subscribe(start);canvas=document.createElement('canvas');canvas.className='journey-effects';canvas.setAttribute('aria-hidden','true');document.getElementById('journeyIllustration').append(canvas);loader.load('environment','low');document.addEventListener('visibilitychange',()=>{if(document.hidden){cancelAnimationFrame(raf);raf=null;}else start();});P.subscribe(start);const practice=document.createElement('button');practice.id='journeyPractice';practice.dataset.route='insight';practice.innerHTML='Translation Insight<br><small>Develop what you have learned</small>';document.querySelector('[data-route=translation]').after(practice);
+ const select=document.createElement('label');select.className='field-selector';select.innerHTML='Choose a Field<select id="journeyFieldSelect" aria-label="Field destination"></select>';document.querySelector('.journey-routes').after(select);
+ document.getElementById('journeyFieldSelect').onchange=e=>{selectedField=e.target.value;document.getElementById('mainContent').scrollTop=0;root.WTTNSettlement.refresh();};
+}
+function update(tab,s){currentTab=tab;start();if(!['translation','network','legacy','fields','insight'].includes(tab))return;const field=G.currentField(s)||G.nextField(s),select=document.getElementById('journeyFieldSelect');select.parentElement.hidden=tab!=='fields';
+ if(tab==='fields'){
+  const cards=[...document.querySelectorAll('#fieldGrid [data-field-id]')],options=cards.map(c=>({id:c.dataset.fieldId,name:c.querySelector('h3')?.textContent||c.dataset.fieldId}));
+  if(!selectedField||!options.some(f=>f.id===selectedField))selectedField=field?.id||options[0]?.id;
+  const signature=options.map(f=>f.id).join('|');if(select.dataset.signature!==signature){select.replaceChildren(...options.map(f=>new Option(f.name,f.id)));select.dataset.signature=signature;}select.value=selectedField;
+  for(const card of cards){card.hidden=card.dataset.fieldId!==selectedField;card.dataset.selected=String(!card.hidden);}
+  document.getElementById('fieldChallengeWorkspace').hidden=selectedField!==field?.id;
+  document.getElementById('fieldMapWorkspace').hidden=selectedField===field?.id;
+  const selected=G.FIELDS.find(f=>f.id===selectedField)||field,key=archetype(selectedField);show(key,selected?.name||labels[key]);const tier=selected?.tier||1;document.getElementById('journeyIllustration').dataset.tier=String(tier);document.getElementById('journeyIllustration').dataset.pattern=selected?.patternId||'';document.getElementById('journeySceneCaption').textContent=(selected?.name||labels[key])+(selected?.patternName?' · '+selected.patternName:'')+(tier>1?' · developed route':'');
+ }else {document.getElementById('journeyIllustration').dataset.pattern='';document.getElementById('journeyIllustration').dataset.tier='1';show(tab==='insight'?'translation':tab);}
+}
+root.WTTNJourney={init,update,archetype,resetSelection:()=>{selectedField=null;}};
+})(globalThis);

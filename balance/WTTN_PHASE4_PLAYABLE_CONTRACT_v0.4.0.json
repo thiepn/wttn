@@ -1,0 +1,64 @@
+{
+  "game": "Word to the Nations",
+  "phase": 4,
+  "version": "0.4.0",
+  "status": "certified",
+  "inherits": [
+    "WTTN_BALANCE_CONTRACT_v0.2.0.json",
+    "WTTN_PHASE3_PLAYABLE_CONTRACT_v0.3.0.json"
+  ],
+  "resources": {
+    "fieldExperience": "FE",
+    "legacyUnlockFE": 70
+  },
+  "fieldReward": {
+    "formula": "floor(validNC^0.35 * difficulty * 10)",
+    "scale": 10
+  },
+  "canonicalFields": [
+    {"id":"urban","name":"Urban Hub I","tier":1,"ncThreshold":2,"difficulty":1.0,"allocationCap":0.4,"validNetworks":1,"reward":"allocationCap"},
+    {"id":"remote","name":"Remote Region I","tier":1,"ncThreshold":3,"difficulty":1.1,"pageMultiplier":0.6,"localCap":0.2,"validNetworks":1,"reward":"preparationBoost"},
+    {"id":"oral","name":"Oral Tradition I","tier":1,"ncThreshold":4,"difficulty":1.2,"directProducerMultiplier":0.7,"teacherMultiplier":2,"projectMultiplier":2,"validNetworks":1,"reward":"firstProjectRetained"},
+    {"id":"restricted","name":"Restricted Context I","tier":1,"ncThreshold":5,"difficulty":1.35,"pageMultiplier":0.82,"autoTranslationTiGate":1000,"validNetworks":1,"reward":"persistentAutomation"},
+    {"id":"multilingual","name":"Multilingual Crossroads I","tier":1,"ncThreshold":6,"difficulty":1.5,"translationThresholdMultiplier":10,"tiMultiplier":1.5,"validNetworks":1,"translations":3,"reward":"internationalBonus"},
+    {"id":"urban-ii","name":"Urban Hub II","tier":2,"ncThreshold":10,"difficulty":2.0,"pageMultiplier":0.75,"allocationCap":0.4,"digitalMin":0.2,"validNetworks":2,"reward":"regionalBonus"},
+    {"id":"remote-ii","name":"Remote Region II","tier":2,"ncThreshold":15,"difficulty":2.3,"pageMultiplier":0.5,"localCap":0.1,"preparationCap":3,"validNetworks":2,"reward":"networkStart"},
+    {"id":"multilingual-ii","name":"Multilingual Crossroads II","tier":2,"ncThreshold":20,"difficulty":2.6,"translationThresholdMultiplier":25,"tiMultiplier":1.4,"internationalCap":0.4,"validNetworks":2,"translations":5,"reward":"internationalBonusII"},
+    {"id":"frontier-iii","name":"Frontier III","tier":3,"ncThreshold":35,"difficulty":4.0,"pageMultiplier":0.45,"allocationCap":0.4,"autoTranslationTiGate":2500,"preparationCap":2,"requireAllProjects":true,"validNetworks":3,"translations":8,"reward":"fieldCompression"}
+  ],
+  "fieldRewards": {
+    "urban": "normal allocation cap -> 75%",
+    "remote": "+1 effective Preparation level",
+    "oral": "retain Manuscript Project after Field resets",
+    "restricted": "retain Project automation after Field resets",
+    "multilingual": "International effectiveness x1.15",
+    "urban-ii": "Regional effectiveness x1.10",
+    "remote-ii": "start future Field cycles with at least 2 NC",
+    "multilingual-ii": "International effectiveness x1.10 again",
+    "frontier-iii": "future Field thresholds x0.90"
+  },
+  "resetSemantics": {
+    "fieldEntryResets": ["Pages","current TI","TI upgrades","Translation development","current NC","Network upgrades","Network one-times"],
+    "fieldEntryRetains": ["lifetime TI","lifetime NC","specialization access","Field Experience","Field rewards","solved base producer automation","records"],
+    "manualTranslationRemainsAvailableWhenAutoTranslationIsFieldGated": true
+  },
+  "timingRegression": {
+    "translationAutomationHours": 6.83,
+    "firstNetworkHours": 10.17,
+    "fieldUnlockHours": 30.17,
+    "firstFieldEntryHours": 30.25,
+    "firstFieldClearHours": 38.33,
+    "thirdFieldClearDays": 3.29,
+    "legacyReadyDays": 4.34,
+    "fieldsClearedAtLegacyReadiness": 4,
+    "feAtLegacyReadiness": 70,
+    "fastestNetworkHours": 4.0
+  },
+  "timingGates": {
+    "firstFieldEntryHours": [30,42],
+    "firstFieldClearHours": [34,48],
+    "thirdFieldClearDays": [2.5,3.5],
+    "legacyReadyDays": [4,6],
+    "networkCollapseSecondsMinimum": 300
+  }
+}

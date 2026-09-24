@@ -1,0 +1,72 @@
+{
+  "game": "Word to the Nations",
+  "release": "2.0.0",
+  "phase": "Pristine Phase 10 — Mission Fields Deepening",
+  "status": "certified",
+  "save": {
+    "gameStateVersion": 6,
+    "envelopeSchema": 1,
+    "migration": "v1.9 linear field.index -> explicit field.cleared ids; active field inferred from prior sequential index when needed"
+  },
+  "routeRules": {
+    "tier1": { "availableOnUnlock": 5, "tier2UnlockAfterAny": 3, "masteryAt": 5 },
+    "tier2": {
+      "available": 3,
+      "frontierUnlockAfterAny": 2,
+      "masteryAt": 3,
+      "parentRequirements": {
+        "urban-ii": "urban",
+        "remote-ii": "remote",
+        "multilingual-ii": "multilingual"
+      }
+    },
+    "tier3": { "field": "frontier-iii", "masteryAt": 1 },
+    "matureField": "unlocks only after all 9 canonical fields are cleared",
+    "campaignFinale": "still requires 5 Tier-I, 3 Tier-II, and 1 Tier-III clear"
+  },
+  "masteryUtility": {
+    "tier1": "Route Archive: Field cards show best recorded clear after full Tier-I mastery",
+    "tier2": "Advanced Debriefs: latest Field review includes final distribution posture and strategy pressure",
+    "tier3": "Mature Fields: renewable FE loop unlocks after full canonical mastery"
+  },
+  "curatedRouteBenchmarksDays": {
+    "canonical": 13.229,
+    "frontierFast": 15.910,
+    "retentionFirst": 14.382,
+    "distributionFirst": 13.976,
+    "hardFirst": 13.524,
+    "spreadRatio": 1.203
+  },
+  "lockedProgression": {
+    "translationAutomationHours": 6.83,
+    "firstNetworkHours": 10.17,
+    "firstFieldHours": 30.25,
+    "legacyReadyDays": 4.27,
+    "referenceCampaignDays": 12.44,
+    "activeCampaignDays": 12.529,
+    "craftedOptimizerDays": 8.638
+  },
+  "adversarial": {
+    "deterministicStrategies": 12,
+    "fastestDays": 8.217,
+    "sub8DayRoutes": 0
+  },
+  "sensitivity": {
+    "perturbation": "±10%",
+    "maxAllowedRatio": 1.25,
+    "worstObservedRatio": 1.186,
+    "status": "pass"
+  },
+  "newRuntimeModule": "field-depth.js",
+  "unchangedFromV1_9": [
+    "bignum.js",
+    "save-format.js",
+    "content.js",
+    "disclosure.js",
+    "art.js",
+    "motion.js",
+    "audio.js",
+    "early-game.js",
+    "midgame-depth.js"
+  ]
+}

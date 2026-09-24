@@ -1,0 +1,49 @@
+name: Build and publish Word to the Nations
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: pages
+  cancel-in-progress: false
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Configure Pages
+        uses: actions/configure-pages@v5
+      - name: Build static site
+        run: python3 tools/build.py
+      - name: Verify economy, saves and presentation
+        run: |
+          npm test
+          node tests/presentation.test.js
+          node tests/settlement-v29.test.js
+          node tests/visual-release.test.js
+          node tests/settlement-v210.test.js
+          node tests/economic-v210.test.js
+          node tests/ui-repair.test.js
+          node tests/delivery.test.js
+      - name: Upload site artifact
+        uses: actions/upload-pages-artifact@v4
+        with:
+          path: dist/web
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Publish to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

@@ -1,0 +1,40 @@
+{
+  "game": "Word to the Nations",
+  "version": "2.1.0",
+  "phase": "Pristine Phase 11 — Legacy & Endgame Depth",
+  "status": "certified",
+  "save_schema": 6,
+  "new_currencies": 0,
+  "new_prestige_layers": 0,
+  "mature_fields": {
+    "patterns": ["stewardship", "translation", "distribution", "integration"],
+    "average_difficulty": 4.0,
+    "rotation_source": "field.matureClears modulo 4",
+    "final_sequence_required_clears": 4
+  },
+  "traditions": {
+    "translation": "preparation + specialization + faster translation readiness",
+    "teaching": "milestones + project strength",
+    "distribution": "allocation cap + infrastructure continuity + stronger bounded pair synergies",
+    "pioneer": "lower Field thresholds + Field-entry continuity"
+  },
+  "certified_results_days": {
+    "reference": 12.72,
+    "normal": 13.49,
+    "active": 12.751,
+    "crafted_optimizer": 8.86,
+    "fuzz_fastest": 8.308
+  },
+  "tradition_benchmark_days": {
+    "translation_scholar": 12.649,
+    "teaching_teacher": 13.156,
+    "distribution_publisher": 13.49,
+    "pioneer_publisher": 12.549
+  },
+  "hard_gates": {
+    "optimized_floor_days": 8,
+    "sub8_fuzz_routes": 0,
+    "sensitivity_max_ratio": 1.25,
+    "observed_sensitivity_worst_ratio": 1.179
+  }
+}

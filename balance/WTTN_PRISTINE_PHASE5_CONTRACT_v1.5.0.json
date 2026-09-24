@@ -1,0 +1,41 @@
+{
+  "game": "Word to the Nations",
+  "version": "1.5.0",
+  "phase": "Pristine Phase 5 — Graphics & Art Direction",
+  "status": "certified",
+  "mechanicsFrozen": true,
+  "saveSchemaFrozen": true,
+  "artSystem": {
+    "module": "art.js",
+    "canonicalViewBox": "0 0 96 96",
+    "producerEngravings": 6,
+    "methodGlyphs": 8,
+    "projectGlyphs": 3,
+    "translationSpecializations": 3,
+    "distributionSymbols": 4,
+    "fieldEmblems": 10,
+    "legacyTraditions": 4,
+    "scriptureCrests": 8,
+    "sharedFieldEmblemsWithAtlas": true,
+    "rasterGameplayArt": false
+  },
+  "artDirection": [
+    "modern editorial publishing",
+    "archival linework",
+    "cartographic marks",
+    "restrained schematic engraving"
+  ],
+  "prohibitedDirection": [
+    "generic AI paintings",
+    "stock missionary silhouettes",
+    "glowing Bible clip-art",
+    "fake parchment everywhere",
+    "real-world cultural caricatures"
+  ],
+  "certification": {
+    "fastestRandomizedDays": 8.452,
+    "sub8DayRoutes": 0,
+    "worstSensitivityRatio": 1.188,
+    "sensitivityLimit": 1.25
+  }
+}

@@ -1,0 +1,777 @@
+<!doctype html>
+
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#e9dfc5">
+  <meta name="color-scheme" content="light">
+  <meta name="application-name" content="Word to the Nations">
+  <meta name="apple-mobile-web-app-title" content="Word to the Nations">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="format-detection" content="telephone=no">
+  <title>Word to the Nations</title>
+  <meta name="description" content="Word to the Nations — a Christian incremental game about careful Scripture work, translation practice, distribution, mission contexts, and durable stewardship.">
+  <meta property="og:title" content="Word to the Nations">
+  <meta property="og:description" content="A local-first Christian incremental game about Scripture work, translation, distribution, mission contexts, and durable stewardship.">
+  <meta property="og:type" content="website">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" type="image/png" sizes="32x32" href="icons/icon-32.png">
+  <link rel="icon" type="image/svg+xml" href="icons/icon.svg">
+  <link rel="apple-touch-icon" sizes="180x180" href="icons/icon-180.png">
+  
+  
+  
+<link rel="stylesheet" href="shared-components.css"><link rel="stylesheet" href="settlement.css"></head>
+<body><a class="skip-link" href="#buildingListButton">Skip to building controls</a>
+<div id="settlementWorld"><canvas id="settlementCanvas" tabindex="0" role="img" aria-label="Your settlement. Left and right arrows select buildings; Enter moves to the hiring action. The Building list provides all controls without the map."></canvas><div id="buildingLabels" aria-label="Settlement buildings"></div></div>
+<header class="world-hud"><h1><img src="assets/ui/icons/tree.svg" alt="">Word <em>to the</em> Nations</h1><div class="hud-end"><section id="livePages" aria-label="Current resources"><img class="resource-icon" src="assets/ui/icons/scroll.svg" alt=""><span class="resource-total"><strong id="pagesValue">0</strong> <span>Pages</span></span><span id="ppsValue">2 / sec</span><details id="resourceBalances" hidden><summary id="settlementCurrencies" aria-label="Other resource balances"></summary><div id="currencyBreakdown"></div></details></section><button data-open-screen="system" class="world-menu" aria-label="Menu"><img src="assets/ui/icons/list.svg" alt=""><span>Menu</span></button></div></header>
+<section class="chapter-ribbon" aria-label="Current chapter"><img src="assets/ui/icons/scroll.svg" alt="" class="journal-icon"><div class="journal-copy"><h2 id="chapterTitle"></h2><p id="chapterText"></p><progress id="chapterProgress" max="1" value="0"></progress><button id="chapterAction"></button></div></section>
+<div class="world-tools"><button id="buildingListButton" aria-label="Building list"><img src="assets/ui/icons/buildings.svg" alt=""><span>Building list</span></button><button data-open-screen="projects" aria-label="Commissions"><img src="assets/ui/icons/seal-check.svg" alt=""><span>Commissions</span></button><button id="decorationButton" aria-label="Decorate"><img src="assets/ui/icons/tree.svg" alt=""><span>Decorate</span></button><span class="camera-controls"><button id="zoomWorldOut" aria-label="Zoom settlement out">−</button><button id="fitWorld" title="Show the whole settlement">Overview</button><button id="zoomWorldIn" aria-label="Zoom settlement in">+</button></span></div>
+<section id="selectionTray" class="selection-tray" data-sheet="compact" aria-label="Selected building"><button id="sheetToggle" aria-label="Expand building sheet" aria-expanded="false"><img src="assets/ui/icons/caret-up.svg" alt=""></button><div class="tray-main"><canvas id="trayPortrait" width="240" height="221" aria-hidden="true"></canvas><div class="building-brief"><small id="buildingCondition"></small><h2 id="settlementTitle"></h2><p><img class="inline-icon" src="assets/ui/icons/users-three.svg" alt=""><strong id="workforceValue">0 scribes</strong> <span id="buildingContribution"></span></p><p><span>Next hire</span> <b id="purchaseGain"></b></p><small id="nextMilestone"></small></div><div class="building-purchase"><div class="quantity-controls" role="group" aria-label="Hiring quantity"><button data-world-quantity="1" aria-pressed="true">1</button><button data-world-quantity="10" aria-pressed="false">10</button><button data-world-quantity="max" aria-pressed="false">Max</button></div><button id="hireWorker" class="primary"><strong id="hireLabel"></strong><span id="purchaseCost"></span><small id="purchaseAvailability"></small></button></div></div><div class="tray-footer"><div><button data-tray-detail="methods" aria-expanded="false"><img src="assets/ui/icons/feather.svg" alt="">Equipment</button><button data-tray-detail="approaches" aria-expanded="false"><img src="assets/ui/icons/compass.svg" alt="">Approach</button><button data-tray-detail="plans" aria-expanded="false"><img src="assets/ui/icons/queue.svg" alt="">Plan purchases</button></div><button id="libraryReferenceButton" data-tray-detail="reference" hidden>Reference shelves</button><small id="awaySummary"></small></div><div id="trayExtra" hidden></div><div id="trayActions" hidden></div><button id="closeTrayExtra" aria-label="Collapse building details">Close details</button></section>
+<nav class="world-nav" aria-label="Main destinations"><button data-destination="settlement" aria-current="page"><i class="nav-art settlement-icon" aria-hidden="true"></i><span>Settlement</span></button><div><button data-destination="journey"><i class="nav-art journey-icon" aria-hidden="true"></i><span>Journey</span></button><button data-destination="codex"><i class="nav-art codex-icon" aria-hidden="true"></i><span>Codex</span></button></div></nav>
+<section id="screenPanel" hidden aria-labelledby="panelHeading"><header class="screen-heading"><h2 id="panelHeading" tabindex="-1">Journey</h2><button id="closeScreen">Return to settlement</button></header><div id="screenNavigation"><nav class="tabs" id="gameTabs" aria-label="Game sections" role="tablist" aria-orientation="horizontal">
+        <button class="tab active" data-tab="work"><svg class="nav-icon" viewbox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5c3-1 5-1 8 1v14c-3-2-5-2-8-1V5Zm16 0c-3-1-5-1-8 1m8-1v14c-3-1-5-1-8 1"></path></svg><span class="tab-label">Work</span></button>
+        <button class="tab" data-tab="projects"><svg class="nav-icon" viewbox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="5" width="14" height="16" rx="2"></rect><path d="M9 5V3h6v2M9 11h6M9 15h4"></path></svg><span class="tab-label">Projects <span id="projectBadge" class="badge hidden">!</span></span></button>
+        <button class="tab" data-tab="translation"><svg class="nav-icon" viewbox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h12m-3-3 3 3-3 3M20 17H8m3-3-3 3 3 3"></path></svg><span class="tab-label">Translation <span id="translationBadge" class="badge hidden">!</span></span></button>
+        <button class="tab hidden" data-tab="insight"><svg class="nav-icon" viewbox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6m-5 3h4M8 14a6 6 0 1 1 8 0l-1 2H9l-1-2Z"></path></svg><span class="tab-label">Insight <span id="insightBadge" class="badge hidden">!</span></span></button>
+        <button class="tab hidden" data-tab="network"><svg class="nav-icon" viewbox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><circle cx="4" cy="4" r="2"></circle><circle cx="20" cy="4" r="2"></circle><circle cx="20" cy="20" r="2"></circle><circle cx="4" cy="20" r="2"></circle><path d="m6 6 4 4m4 0 4-4M6 18l4-4m4 0 4 4"></path></svg><span class="tab-label">Network <span id="networkBadge" class="badge hidden">!</span></span></button>
+        <button class="tab hidden" data-tab="fields"><svg class="nav-icon" viewbox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="m3 6 6-3 6 3 6-3v15l-6 3-6-3-6 3V6Zm6-3v15m6-12v15"></path></svg><span class="tab-label">Fields <span id="fieldBadge" class="badge hidden">!</span></span></button>
+        <button class="tab hidden" data-tab="legacy"><svg class="nav-icon" viewbox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3 8 4v5c0 5-8 9-8 9s-8-4-8-9V7l8-4Zm-4 9 3 3 5-6"></path></svg><span class="tab-label">Legacy <span id="legacyBadge" class="badge hidden">!</span></span></button>
+        <button class="tab hidden" data-tab="scripture"><svg class="nav-icon" viewbox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h14a2 2 0 0 1 2 2v15H6a2 2 0 0 1-2-2V4Zm0 13h16M9 8h6m-3-3v8"></path></svg><span class="tab-label">Codex <span id="scriptureBadge" class="badge hidden">!</span></span></button>
+        <button class="tab" data-tab="stats"><svg class="nav-icon" viewbox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V4m0 16h17M8 16v-5m5 5V7m5 9v-9"></path></svg><span class="tab-label">Stats</span></button>
+        <button class="tab" data-tab="system"><svg class="nav-icon" viewbox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M4 17h16"></path><circle cx="9" cy="7" r="3"></circle><circle cx="16" cy="17" r="3"></circle></svg><span class="tab-label">System</span></button>
+      </nav></div><aside id="journeyMap" aria-label="Journey destinations"><div id="journeyIllustration" role="img" aria-label="Illustrated dispatch harbor"></div><div id="journeySceneCaption"></div><div class="journey-routes"><div class="journey-map-heading"><p class="eyebrow">A WORK THAT TRAVELS</p><h3>From this place,<br>out into the world.</h3></div><button data-route="translation" class="route-departure">Translation<br><small>Send prepared work</small></button><button data-route="network" class="route-network">Network<br><small>Build connections</small></button><button data-route="fields" class="route-fields">Fields<br><small>Listen and adapt</small></button><button data-route="legacy" class="route-legacy">Legacy<br><small>Carry experience forward</small></button></div><div id="journeyCaption"></div></aside><main id="mainContent" tabindex="-1"><section id="tab-work" class="tab-pane active"><div id="producerWorkspace" class="ux-workspace">
+        <div class="section-heading">
+          <h3 class="quantity-heading">Purchase quantity</h3>
+          <div class="buy-controls" role="group" aria-label="Purchase quantity">
+            <button data-buy-amount="1" class="active">×1</button>
+            <button data-buy-amount="10">×10</button>
+            <button data-buy-amount="max" id="buyMaxButton" disabled>Max</button>
+          </div>
+        </div>
+        <div id="producerGrid" class="producer-grid"></div>
+        </div><div id="methodsWorkspace" class="ux-workspace ux-secondary-workspace">
+        <div class="section-heading subheading"><div><p class="eyebrow">ONE-RUN IMPROVEMENTS</p><h2>Methods</h2></div></div>
+        <div id="upgradeGrid" class="upgrade-grid"></div>
+        <section id="queueWorkspace" class="purchase-queue panel" aria-label="Planned purchases">
+          <div id="queueContent"></div>
+          <form id="queueForm" class="queue-form"><label>Order<select id="queueKind"><option value="producer">Producer target</option><option value="method">Method</option></select></label><label>Purchase<select id="queueItem"></select></label><label id="queueTargetLabel">Total owned<input id="queueTarget" type="number" min="1" max="100000" step="1" value="25" required></label><button id="queueAdd" type="submit">Add order</button></form><p id="queueFeedback" role="status"></p>
+        </section>
+        </div></section><section id="tab-projects" class="tab-pane">
+        <section id="projectsDecisionCockpit" class="decision-cockpit panel" aria-label="Current Project decision"></section>
+        <div id="projectWorkspace" class="ux-workspace">
+        <div class="section-heading">
+          <div><p class="eyebrow">RUN OBJECTIVES</p><h2>Commissions</h2></div>
+          <p class="section-note">Projects reset when you Translate unless a later layer says otherwise.</p>
+        </div>
+        <div id="projectGrid" class="project-grid"></div><section id="commissionReference" class="reference-section"></section>
+        </div>
+      </section><section id="tab-translation" class="tab-pane">
+        <section id="translationDecisionCockpit" class="decision-cockpit panel" aria-label="Translation reset decision"></section>
+        <details class="advanced-efficiency"><summary>Efficiency notes and comparisons</summary><section id="translationDepthPanel" class="midgame-depth panel hidden" aria-label="Translation reset planner"></section></details>
+        <nav class="section-jump-nav" aria-label="Translation sections"><button data-section-target="translationResetWorkspace">Reset decision</button><button data-section-target="translationHistoryWorkspace">History</button></nav>
+        <div id="translationResetWorkspace" class="ux-workspace translation-layout">
+          <article class="panel translation-card">
+            <p class="eyebrow">TRANSLATION CYCLE</p>
+            <h2>Translation</h2>
+            <p>Complete a major language-work cycle and begin again with what has been learned. Translation Insight represents accumulated technical and organizational learning, not the value or power of Scripture itself.</p><div class="scripture-refs"><span>Read</span><cite>Acts 2:5–11</cite><cite>Acts 8:30–35</cite></div>
+            <div class="translation-gain"><span>You would gain</span><strong><span id="tiGain">0</span> TI</strong></div>
+            <div class="readiness-box" id="readinessBox">
+              <div><span class="eyebrow">RUN READINESS</span><strong id="readinessLabel">Not ready</strong></div>
+              <p id="readinessText">Reach 1e12 peak Pages.</p>
+            </div>
+            <section id="translationExactPreview" class="reset-preview" aria-label="After this reset"></section><div id="efficiencyBox" class="formula-box hidden"></div>
+            <button id="translateBtn" class="primary wide" disabled>Complete Translation</button>
+            <p class="fineprint">Translations reset Pages, producers, Methods, and Projects. Translation Insight, its upgrades, and your records remain.</p>
+          </article>
+
+          <aside class="panel translation-side">
+            <p class="eyebrow">TRANSLATION RECORD</p>
+            <dl>
+              <div><dt>Available TI</dt><dd id="tiValue">0</dd></div>
+              <div><dt>Lifetime TI</dt><dd id="lifetimeTiValue">0</dd></div>
+              <div><dt>Translations</dt><dd id="translationCount">0</dd></div>
+              <div><dt>Current run</dt><dd id="translationRun">0:00</dd></div>
+              <div><dt>Best gain</dt><dd id="bestTranslationGain">0</dd></div>
+              <div><dt>Fastest run</dt><dd id="fastestTranslation">—</dd></div>
+            </dl>
+            <div class="note-card"><strong>Reset timing matters</strong><p>Repeat runs shorter than ten minutes are compressed. Waiting raises readiness, but long runs eventually sacrifice resets per hour. The useful question is not “can I reset?” but “is this reset efficient?”</p></div>
+          </aside>
+        </div>
+        <section id="translationHistoryWorkspace" class="ux-workspace ux-secondary-workspace">
+        <section id="recentRunsSection" class="subsection hidden">
+          <div class="section-heading subheading"><div><p class="eyebrow">REUSABLE TEMPLATES</p><h2>Recent Translations</h2></div></div>
+          <div id="recentRuns" class="runs-grid"></div>
+        </section>
+        </section>
+      </section><section id="tab-insight" class="tab-pane">
+        <div id="insightLocked" class="panel locked-panel">
+          <p class="eyebrow">LOCKED</p><h2>Translation Insight</h2><p>Complete your first Translation to open the permanent Translation layer.</p>
+        </div>
+        <div id="insightContent" class="hidden">
+          <section id="insightDecisionCockpit" class="decision-cockpit panel" aria-label="Current Translation Insight decision"></section>
+          <nav class="section-jump-nav" aria-label="Insight sections"><button data-section-target="practiceWorkspace">Practice</button><button data-section-target="developmentWorkspace">Development</button><button data-section-target="specializationWorkspace">Specialization</button><button data-section-target="automationWorkspace">Automation</button></nav>
+          <div class="insight-summary panel">
+            <div><span class="eyebrow">AVAILABLE</span><strong id="insightTi">0 TI</strong></div>
+            <div><span class="eyebrow">LIFETIME</span><strong id="insightLifetime">0 TI</strong></div>
+            <div><span class="eyebrow">WORKFLOW</span><strong id="workflowSummary">×1.00</strong></div>
+            <div><span class="eyebrow">TRAINING</span><strong id="trainingSummary">×1.00 synergy</strong></div>
+          </div>
+
+          <section id="translationStrategyBoard" class="midgame-depth panel" aria-label="Translation strategy board"></section>
+
+          <section id="practiceWorkspace" class="ux-workspace">
+          <div class="section-heading subheading"><div><p class="eyebrow">REPEATABLE KNOWLEDGE</p><h2>Translation Practice</h2></div></div>
+          <div id="repeatableGrid" class="upgrade-grid three-col"></div>
+          </section>
+
+          <section id="developmentWorkspace" class="ux-workspace">
+          <div class="section-heading subheading"><div><p class="eyebrow">PERMANENT UNLOCKS</p><h2>Translation Development</h2></div><p class="section-note">A sequential path. Utility first; automation later.</p></div>
+          <div id="oneTimeGrid" class="upgrade-grid three-col"></div>
+          </section>
+
+          <section id="specializationWorkspace" class="ux-workspace">
+          <div class="section-heading subheading"><div><p class="eyebrow">ORGANIZED DESK</p><h2>Specialization</h2></div><p class="section-note" id="specializationHint">Choose after Organized Desk.</p></div>
+          <div id="specializationGrid" class="specialization-grid"></div>
+          </section>
+
+          <section id="automationWorkspace" class="ux-workspace ux-secondary-workspace">
+          <div class="section-heading subheading"><div><p class="eyebrow">AUTOMATION</p><h2>Translation Operations</h2></div></div>
+          <div class="automation-layout">
+            <article class="panel automation-card">
+              <h3>Automation status</h3>
+              <div id="automationStatus" class="status-list"></div>
+            </article>
+            <article class="panel automation-card" id="autoTranslationCard">
+              <h3>Auto-Translation rules</h3>
+              <p class="muted small">Unlocked by Translation Automation. It respects the same readiness formula as manual resets.</p>
+              <label class="toggle-line"><input type="checkbox" id="autoEnabled"> Enabled</label>
+              <label>Minimum run <span id="autoMinLabel">1:30</span><input type="range" id="autoMinRun" min="60" max="1200" step="30" value="90"></label>
+              <label>Reset when gain ≥ <span id="autoMultipleLabel">1.35×</span> previous<input type="range" id="autoMultiple" min="1" max="3" step="0.05" value="1.35"></label>
+              <label>Maximum run <span id="autoMaxLabel">30:00</span><input type="range" id="autoMaxRun" min="300" max="3600" step="60" value="1800"></label>
+              <div class="auto-profile-block">
+                <p class="eyebrow">PLAY STYLE</p>
+                <div id="autoProfileGrid" class="auto-profile-grid"></div>
+              </div>
+            </article>
+          </div>
+
+          <section id="presetSection" class="subsection hidden">
+            <div class="section-heading subheading"><div><p class="eyebrow">TRANSLATION PRESETS</p><h2>Saved Configurations</h2></div></div>
+            <div id="presetGrid" class="preset-grid"></div>
+          </section>
+          </section>
+        </div>
+      </section><section id="tab-network" class="tab-pane">
+        <section id="networkDecisionCockpit" class="decision-cockpit panel" aria-label="Current Network decision"></section>
+        <nav class="section-jump-nav" aria-label="Network sections"><button data-section-target="networkResetWorkspace">Reset</button><button data-section-target="distributionWorkspace">Distribution</button><button data-section-target="networkDevelopmentWorkspace">Development</button><button data-section-target="networkFieldWorkspace">Fields</button></nav>
+        <div class="section-heading">
+          <div><p class="eyebrow">DISTRIBUTION &amp; STEWARDSHIP</p><h2>Distribution Network</h2></div>
+          <p class="section-note">Network Capacity represents logistics, partnerships, continuity, and distribution channels—not converts, churches, or people reached. TI earned during the current Network cycle determines capacity; spending TI does not reduce this progress.</p>
+        </div>
+
+        <div class="insight-summary panel network-summary">
+          <div><span class="eyebrow">AVAILABLE</span><strong id="networkNc">0 NC</strong></div>
+          <div><span class="eyebrow">LIFETIME</span><strong id="networkLifetimeNc">0 NC</strong></div>
+          <div><span class="eyebrow">THIS NETWORK</span><strong id="networkTiEarned">0 TI</strong></div>
+          <div><span class="eyebrow">CYCLE</span><strong id="networkRunTime">0:00</strong></div>
+        </div>
+        <details class="advanced-efficiency"><summary>Efficiency notes and comparisons</summary><section id="networkDepthPanel" class="midgame-depth panel hidden" aria-label="Network cycle planner"></section></details>
+
+        <div id="networkResetWorkspace" class="ux-workspace translation-layout network-reset-layout">
+          <article class="panel translation-card">
+            <p class="eyebrow">ESTABLISH NETWORK</p>
+            <h2>Build persistent distribution capacity</h2>
+            <p>A Network represents establishing durable channels around the work. It resets the Translation economy while preserving Network Capacity and Network upgrades. Base producer automation becomes solved after the first Network.</p><div class="scripture-refs"><span>Read</span><cite>Romans 10:14–15</cite><cite>3 John 1:5–8</cite></div>
+            <div class="translation-gain"><span>You would gain</span><strong><span id="ncGain">0</span> NC</strong></div>
+            <div class="readiness-box" id="networkReadinessBox">
+              <div><span class="eyebrow">NETWORK READINESS</span><strong id="networkReadinessLabel">Building</strong></div>
+              <p id="networkReadinessText">Earn 1,200 TI during this Network cycle.</p>
+            </div>
+            <div id="networkEfficiencyBox" class="formula-box"></div>
+            <section id="networkExactPreview" class="reset-preview" aria-label="After this reset"></section><button id="networkResetBtn" class="primary wide" disabled>Establish Network</button>
+            <p class="fineprint">Network resets clear current TI, TI repeatables, Translation development unlocks, Pages, Methods, and Projects. Network Capacity, Network upgrades, lifetime records, specialization access, and base producer automation remain.</p>
+          </article>
+          <aside class="panel translation-side">
+            <p class="eyebrow">NETWORK RECORD</p>
+            <dl>
+              <div><dt>Networks</dt><dd id="networkCount">0</dd></div>
+              <div><dt>Best gain</dt><dd id="bestNetworkGain">0 NC</dd></div>
+              <div><dt>Fastest cycle</dt><dd id="fastestNetwork">—</dd></div>
+              <div><dt>Field progress</dt><dd id="fieldNcProgress">0 / 6 NC</dd></div>
+            </dl>
+            <div class="note-card"><strong>Second reset boundary</strong><p>The first Network is about reaching the threshold. Repeat Network cycles use a two-hour readiness curve so reset spam cannot dominate.</p></div>
+          </aside>
+        </div>
+
+        <section id="distributionWorkspace" class="ux-workspace">
+        <section id="distributionSection" class="subsection hidden">
+          <div class="section-heading subheading"><div><p class="eyebrow">ALLOCATION</p><h2>Distribution Strategy</h2></div><p class="section-note" id="allocationNote">Move capacity in 5% steps. All four channels must total 100%.</p></div>
+          <div id="allocationStrategyBoard" class="allocation-strategy-board panel"></div>
+          <div id="allocationGrid" class="allocation-grid"></div>
+          <div id="allocationEffects" class="formula-box allocation-effects"></div>
+          <div id="allocationTemplateGrid" class="allocation-template-grid"></div>
+        </section>
+        </section>
+
+        <section id="networkDevelopmentWorkspace" class="ux-workspace ux-secondary-workspace">
+        <section class="subsection">
+          <div class="section-heading subheading"><div><p class="eyebrow">NETWORK DEVELOPMENT</p><h2>Infrastructure &amp; Retention</h2></div></div>
+          <div id="networkUpgradeGrid" class="upgrade-grid three-col"></div>
+        </section>
+
+        <section id="networkPresetSection" class="subsection hidden">
+          <div class="section-heading subheading"><div><p class="eyebrow">DISTRIBUTION NOTES</p><h2>Allocation Presets</h2></div></div>
+          <div id="networkPresetGrid" class="preset-grid"></div>
+        </section>
+
+        <section id="recentNetworksSection" class="subsection hidden">
+          <div class="section-heading subheading"><div><p class="eyebrow">NETWORK HISTORY</p><h2>Recent Networks</h2></div></div>
+          <div id="recentNetworks" class="runs-grid"></div>
+        </section>
+        </section>
+
+        <section id="networkFieldWorkspace" class="ux-workspace">
+        <section class="subsection">
+          <article class="panel field-preview" id="fieldPreviewCard">
+            <p class="eyebrow">MISSION FIELD PROGRESSION</p>
+            <h2 id="fieldPreviewTitle">Mission Fields</h2>
+            <p id="fieldPreviewText">Establish 4 lifetime Network Capacity to unlock the first Mission Field.</p>
+            <div class="progress-line"><span id="fieldProgressBar"></span></div>
+            <button id="openFieldsBtn" class="wide" disabled>Open Mission Fields</button>
+          </article>
+        </section>
+        </section>
+      </section><section id="tab-fields" class="tab-pane">
+        <div id="fieldsLocked" class="panel locked-panel">
+          <p class="eyebrow">LOCKED</p><h2>Mission Fields</h2><p>Establish 4 lifetime Network Capacity and finish at least one valid Network cycle. Fields are fictionalized strategic contexts designed to test adaptation; they are not rankings or simulations of real peoples or cultures.</p>
+        </div>
+        <div id="fieldsContent" class="hidden">
+          <section id="fieldsDecisionCockpit" class="decision-cockpit panel" aria-label="Current Mission Field decision"></section>
+          <nav class="section-jump-nav" aria-label="Mission Field sections"><button data-section-target="fieldChallengeWorkspace">Current challenge</button><button data-section-target="fieldMapWorkspace">Campaign map</button><button data-section-target="fieldLegacyWorkspace">Legacy</button></nav>
+          <div class="insight-summary panel field-summary">
+            <div><span class="eyebrow">AVAILABLE</span><strong id="fieldFe">0 FE</strong></div>
+            <div><span class="eyebrow">LIFETIME</span><strong id="fieldLifetimeFe">0 FE</strong></div>
+            <div><span class="eyebrow">THIS LEGACY</span><strong id="fieldLegacyFe">0 / 70 FE</strong></div>
+            <div><span class="eyebrow">CLEARED</span><strong id="fieldClearCount">0 / 9</strong></div>
+          </div>
+          <details class="advanced-disclosure"><summary>Route planning and campaign comparisons</summary><section id="fieldRouteBoard" class="field-route-board panel" aria-label="Mission Field route planner"></section></details>
+
+          <div id="fieldChallengeWorkspace" class="ux-workspace translation-layout field-layout">
+            <article class="panel translation-card">
+              <p class="eyebrow" id="fieldTierLabel">NEXT FIELD</p>
+              <h2 id="currentFieldName">Urban Hub I</h2>
+              <p id="currentFieldDescription">Unlock Mission Fields to begin.</p>
+              <div id="fieldStrategyBriefing" class="field-strategy-briefing"></div>
+              <div id="fieldConstraintList" class="field-rule-list"></div>
+              <div class="section-heading subheading compact-heading"><div><p class="eyebrow">OBJECTIVES</p><h3>Clear conditions</h3></div></div>
+              <div id="fieldObjectiveList" class="field-objectives"></div>
+              <div class="translation-gain"><span id="fieldGainLabel">Clear reward</span><strong><span id="fieldGain">0</span> FE</strong></div>
+              <button id="enterFieldBtn" class="primary wide" disabled>Enter Mission Field</button>
+              <button id="completeFieldBtn" class="primary wide hidden" disabled>Complete Mission Field</button>
+              <p class="fineprint">Entering a Field resets current TI, NC, Translation development, and Network development. Permanent Field rewards, lifetime records, specialization access, and solved base automation remain.</p>
+            </article>
+            <aside class="panel translation-side">
+              <p class="eyebrow">FIELD STATUS</p>
+              <dl>
+                <div><dt>Field time</dt><dd id="fieldRunTime">—</dd></div>
+                <div><dt>Valid NC</dt><dd id="fieldProgressNc">0</dd></div>
+                <div><dt>Valid Networks</dt><dd id="fieldValidNetworks">0</dd></div>
+                <div><dt>Translations</dt><dd id="fieldTranslations">0</dd></div>
+                <div><dt>Projects</dt><dd id="fieldProjects">0 / 3</dd></div>
+              </dl>
+              <div id="fieldBottleneck" class="note-card"><strong>Current bottleneck</strong><p>Enter a Field to begin objective tracking.</p></div>
+              <div class="note-card"><strong id="fieldRewardTitle">Field reward</strong><p id="fieldRewardText">Each Field primarily changes retention, automation, or strategic flexibility.</p></div>
+            </aside>
+          </div>
+
+          <section id="fieldMapWorkspace" class="ux-workspace subsection">
+            <div class="section-heading subheading"><div><p class="eyebrow">CAMPAIGN MAP</p><h2>Mission Fields</h2></div><p class="section-note">Tier labels describe mechanical complexity only. They do not imply that any real culture, language community, location, or ministry context has a spiritual difficulty rating.</p></div>
+            <div id="fieldGrid" class="field-grid"></div>
+          </section>
+
+          <section id="fieldLegacyWorkspace" class="ux-workspace ux-secondary-workspace subsection">
+            <article class="panel legacy-preview">
+              <div><p class="eyebrow">LONG-TERM CONTINUITY</p><h2>Legacy</h2><p>Field Experience can establish durable organizational memory: trained people, retained methods, and continuity across cycles. Legacy is not a measure of spiritual merit.</p></div>
+              <div class="legacy-progress-copy"><strong id="legacyProgressText">0 / 70 FE</strong><span id="legacyProgressHint">Complete Fields to build long-term experience.</span></div>
+              <div class="progress-line"><span id="legacyProgressBar"></span></div>
+              <button id="openLegacyBtn" class="wide" disabled>Open Legacy</button>
+            </article>
+          </section>
+
+          <section id="fieldDebriefSection" class="subsection hidden">
+            <div class="section-heading subheading"><div><p class="eyebrow">AFTER-ACTION REVIEW</p><h2>Latest Field Debrief</h2></div><p class="section-note">A concise record of what the last Field demanded and what changed afterward.</p></div>
+            <div id="fieldDebrief" class="field-debrief panel"></div>
+          </section>
+
+          <section id="recentFieldsSection" class="subsection hidden">
+            <div class="section-heading subheading"><div><p class="eyebrow">FIELD HISTORY</p><h2>Recent Field Clears</h2></div></div>
+            <div id="recentFields" class="runs-grid"></div>
+          </section>
+        </div>
+      </section><section id="tab-legacy" class="tab-pane">
+        <div id="legacyLocked" class="panel locked-panel">
+          <p class="eyebrow">LOCKED</p><h2>Legacy</h2><p>Accumulate 70 Field Experience during the current Legacy era to unlock the fourth reset boundary.</p>
+        </div>
+        <div id="legacyContent" class="hidden">
+          <section id="legacyDecisionCockpit" class="decision-cockpit panel" aria-label="Current Legacy decision"></section>
+          <nav class="section-jump-nav" aria-label="Legacy sections"><button data-section-target="legacyResetWorkspace">Reset</button><button data-section-target="legacyDevelopmentWorkspace">Development</button><button data-section-target="traditionWorkspace">Tradition</button><button data-section-target="campaignWorkspace">Campaign</button></nav>
+          <div class="insight-summary panel legacy-summary">
+            <div><span class="eyebrow">AVAILABLE</span><strong id="legacyValue">0 L</strong></div>
+            <div><span class="eyebrow">LIFETIME</span><strong id="legacyLifetime">0 L</strong></div>
+            <div><span class="eyebrow">THIS ERA</span><strong id="legacyEraFe">0 / 70 FE</strong></div>
+            <div><span class="eyebrow">LEGACIES</span><strong id="legacyCount">0</strong></div>
+          </div>
+
+          <details class="advanced-disclosure"><summary>Era strategy and mature Field planning</summary><section id="legacyStrategyWorkspace" class="legacy-strategy-board panel" aria-label="Legacy era strategy">
+            <div class="legacy-strategy-heading"><div><p class="eyebrow">LEGACY ERA PLAN</p><h2>Turn repetition into deliberate cycles.</h2></div><span id="legacyStrategyStatus" class="status-chip">Building</span></div>
+            <div id="legacyStrategyBoard" class="legacy-strategy-grid"></div>
+          </section></details>
+
+          <div id="legacyResetWorkspace" class="ux-workspace translation-layout legacy-reset-layout">
+            <article class="panel translation-card">
+              <p class="eyebrow">ESTABLISH LEGACY</p>
+              <h2>Compress what has already been mastered</h2>
+              <p>Legacy resets lower-layer currencies and development while preserving what has genuinely become organizational memory: canonical Field clears, permanent Field rewards, Scripture collections, Legacy milestones, and campaign history.</p>
+              <div class="translation-gain"><span>You would gain</span><strong><span id="legacyGain">0</span> Legacy</strong></div>
+              <div class="readiness-box" id="legacyReadinessBox"><div><span class="eyebrow">LEGACY READINESS</span><strong id="legacyReadinessLabel">Building</strong></div><p id="legacyReadinessText">Accumulate 70 FE this era.</p></div>
+              <details class="advanced-disclosure"><summary>Legacy efficiency and formula</summary><div id="legacyEfficiencyBox" class="formula-box"></div></details>
+              <section id="legacyExactPreview" class="reset-preview" aria-label="After this reset"></section><button id="legacyResetBtn" class="primary wide" disabled>Establish Legacy</button>
+              <p class="fineprint">Legacy never resets cleared canonical Fields or their permanent rewards. Mature Fields remain repeatable after the canonical campaign map is complete.</p>
+            </article>
+            <aside class="panel translation-side">
+              <p class="eyebrow">LEGACY RECORD</p>
+              <dl>
+                <div><dt>Best gain</dt><dd id="bestLegacyGain">0 L</dd></div>
+                <div><dt>Fastest era</dt><dd id="fastestLegacy">—</dd></div>
+                <div><dt>Current era</dt><dd id="legacyRunTime">0:00</dd></div>
+                <div><dt>Legacy power</dt><dd id="legacyPower">×1.00</dd></div>
+              </dl>
+              <div class="note-card"><strong>Compression boundary</strong><p>Legacy lowers recovery requirements and improves starting conditions. It does not directly multiply every system by enormous values.</p></div>
+            </aside>
+          </div>
+
+          <section id="legacyDevelopmentWorkspace" class="ux-workspace subsection">
+            <div class="section-heading subheading"><div><p class="eyebrow">LEGACY MILESTONES</p><h2>Development</h2></div><p class="section-note">Milestones use lifetime Legacy and are never spent.</p></div>
+            <div id="legacyMilestoneGrid" class="upgrade-grid three-col"></div>
+          </section>
+
+          <section id="traditionWorkspace" class="ux-workspace subsection">
+            <div class="section-heading subheading"><div><p class="eyebrow">MINISTRY TRADITION</p><h2>Cycle Focus</h2></div><p class="section-note" id="traditionHint">Complete your first Legacy to choose a Tradition.</p></div>
+            <div id="traditionGrid" class="specialization-grid tradition-grid"></div>
+          </section>
+
+          <section id="campaignWorkspace" class="ux-workspace subsection">
+            <article class="panel campaign-card">
+              <div><p class="eyebrow">FINAL CAMPAIGN</p><h2>To Every Nation</h2><p>Complete the designed campaign after all nine canonical Fields, one complete four-pattern Mature cycle, and 100 lifetime Legacy. The title echoes the biblical commission, but this progress bar does not represent people converted, peoples reached, or the completion of real-world missions.</p><div class="scripture-refs"><span>Read</span><cite>Matthew 28:18–20</cite><cite>Acts 1:8</cite><cite>Revelation 7:9–10</cite></div></div>
+              <div id="campaignRequirements" class="campaign-requirements"></div>
+              <button id="completeCampaignBtn" class="primary wide" disabled>Final sequence locked</button>
+            </article>
+          </section>
+
+          <section id="recentLegaciesSection" class="subsection hidden">
+            <div class="section-heading subheading"><div><p class="eyebrow">LEGACY HISTORY</p><h2>Recent Legacies</h2></div></div>
+            <div id="recentLegacies" class="runs-grid"></div>
+          </section>
+        </div>
+      </section><section id="tab-scripture" class="tab-pane">
+        <div class="section-heading">
+          <div><p class="eyebrow">SCRIPTURE LIBRARY</p><h2>The Scripture Codex</h2></div>
+          <p class="section-note">Read selected passages and their chapters, or follow along in your preferred translation. Scripture is never a currency, consumable, or stat bonus.</p>
+        </div>
+        <section id="codexReader" class="codex-reader" aria-label="Read Scripture"></section><details class="codex-commentary"><summary>Explore book collections, history &amp; campaign commentary</summary><div class="panel scripture-intro content-principles">
+          <div><p class="eyebrow">CONTENT PRINCIPLE</p><h3>The numbers measure work, not spiritual worth.</h3><p>Pages, Translation Insight, Network Capacity, Field Experience, and Legacy model preparation, learning, logistics, contextual experience, and organizational continuity. They do not count salvation, conversion, holiness, prayer, churches, or human value.</p></div>
+          <div><p class="eyebrow">READING NOTE</p><p>Collections follow broad canonical groupings for navigation. Their order is a campaign structure, not a ranking of biblical books. No individual passage changes production.</p><strong id="librarySummary">0 / 8 collections unlocked</strong></div>
+        </div>
+        <div id="scriptureGrid" class="scripture-grid"></div>
+
+        <section class="subsection">
+          <div class="section-heading subheading"><div><p class="eyebrow">HISTORY &amp; PRACTICE</p><h2>How Scripture work has changed across media and institutions</h2></div><p class="section-note">Optional sourced notes. Historical description is kept distinct from Scripture and from the game’s fictional abstractions.</p></div>
+          <div id="historyContextGrid" class="history-context-grid"></div>
+        </section>
+
+        <section class="subsection">
+          <div class="section-heading subheading"><div><p class="eyebrow">CHRISTIAN CONTENT GUARDRAILS</p><h2>What this game refuses to turn into a number</h2></div><p class="section-note">These boundaries apply to the entire campaign, including its missions language and ending.</p></div>
+          <div id="guardrailGrid" class="guardrail-grid"></div>
+        </section>
+
+        <section class="subsection">
+          <div class="section-heading subheading"><div><p class="eyebrow">WHAT THE NUMBERS MEAN</p><h2>Terminology &amp; Guardrails</h2></div><p class="section-note">A plain-language reminder of what each resource represents—and what it does not.</p></div>
+          <div id="terminologyGrid" class="terminology-grid"></div>
+        </section>
+
+        <section class="subsection">
+          <div class="section-heading subheading"><div><p class="eyebrow">MILESTONE JOURNAL</p><h2>Remember the path</h2></div><p class="section-note" id="journalSummary">0 / 10 milestones recorded</p></div>
+          <p class="panel journal-intro">These milestones record campaign events and point to relevant passages for reflection. They provide no economic bonuses.</p>
+          <div id="achievementGrid" class="achievement-grid"></div>
+        </section>
+      </details></section><section id="tab-stats" class="tab-pane">
+        <div class="section-heading"><div><p class="eyebrow">ECONOMY</p><h2>Statistics</h2></div><p class="section-note">ETAs are estimates from current production or recent completed reset rates; they are intentionally labeled rather than presented as exact promises.</p></div>
+        <div id="statsGrid" class="stats-grid"></div>
+        <div class="section-heading subheading"><div><p class="eyebrow">PROGRESSION DIAGNOSTICS</p><h2>Estimated time to next boundaries</h2></div></div>
+        <div id="etaGrid" class="stats-grid eta-grid"></div>
+        <div class="section-heading subheading"><div><p class="eyebrow">OFFLINE RECORD</p><h2>Idle progression</h2></div></div>
+        <div id="offlineStatsGrid" class="stats-grid"></div>
+        <details class="panel debug-details"><summary>Economy debug</summary><pre id="debugOutput"></pre></details>
+      <details><summary>Scene performance (current device)</summary><pre id="rendererStats"></pre></details></section><section id="tab-system" class="tab-pane"><section class="panel visual-settings"><p class="eyebrow">THE LOOK OF YOUR SETTLEMENT</p><h3>Visual preferences</h3><div class="visual-options"><label>Artwork quality<select data-visual="quality" aria-label="Artwork quality"><option value="auto">Auto · suit this device</option><option value="high">High · detailed artwork</option><option value="low">Low · lighter scene</option></select></label><label>Animation<select data-visual="motion" aria-label="Animation"><option value="system">Follow device preference</option><option value="full">Calm animation</option><option value="reduce">Reduced motion</option></select></label><label>Building labels<select data-visual="labels" aria-label="Building labels"><option value="contextual">Selected and next opportunity</option><option value="all">Show all building labels</option></select></label></div><p class="fineprint">Quality changes artwork and decorative activity only. These preferences are stored separately from your campaign. Sound is optional and off by default.</p></section><section class="panel"><h3>Upgrade recovery</h3><p>Your original save is preserved before the first schema upgrade (7 or 8).</p><button id="exportMigrationBtn">Export pre-upgrade save</button><button id="exportFullRecoveryBtn">Export last full recovery</button></section>
+        <div class="section-heading"><div><p class="eyebrow">SYSTEM</p><h2>Automation, Offline Progress &amp; Save Safety</h2></div><p class="section-note">These controls change how already-unlocked systems operate; they do not add new economic power.</p></div>
+        <div class="system-grid">
+          <article class="panel system-card" id="automationSwitchboardCard">
+            <p class="eyebrow">AUTOMATION SWITCHBOARD</p>
+            <h3>Pause solved systems without losing unlocks</h3>
+            <label class="system-toggle"><input type="checkbox" id="controlBaseAutomation"> <span><strong>Base production automation</strong><small>Scribes, producers, and Methods when their automation is unlocked.</small></span></label>
+            <label class="system-toggle"><input type="checkbox" id="controlProjectAutomation"> <span><strong>Project automation</strong><small>Only has an effect after Project Queue / retained Project automation.</small></span></label>
+            <label class="system-toggle"><input type="checkbox" id="controlTranslationAutomation"> <span><strong>Auto-Translation execution</strong><small>Keeps your saved reset rules but pauses automatic resets.</small></span></label>
+          </article>
+
+          <article class="panel system-card">
+            <p class="eyebrow">OFFLINE PROGRESS</p>
+            <h3>Simulate the same economy while the app is closed</h3>
+            <label class="system-toggle"><input type="checkbox" id="offlineEnabled"> <span><strong>Enable offline progression</strong><small>Uses the same 10-second economy cadence as live play.</small></span></label>
+            <label class="select-line" for="offlineCap"><span><strong>Maximum simulated gap</strong><small>Longer gaps are capped to bound startup work.</small></span><select id="offlineCap"><option value="86400">1 day</option><option value="604800">7 days</option><option value="1209600">14 days</option><option value="2592000">30 days</option></select></label>
+            <p class="fineprint">Only automation you have actually unlocked can act offline. Network, Field, Legacy, and campaign resets remain manual.</p>
+          </article>
+
+          <article class="panel system-card">
+            <p class="eyebrow">SAVE INTEGRITY</p>
+            <h3>Primary save + automatic recovery snapshot</h3>
+            <div id="saveHealth" class="save-health">Checking save…</div>
+            <div class="system-actions"><button id="validateSaveBtn">Validate current save</button><button id="restoreBackupBtn">Restore backup</button><button class="danger" id="resetBtn">Reset campaign</button></div>
+            <p class="fineprint">Every save is wrapped with a checksum. Before overwriting the primary save, the previous valid snapshot is retained as a backup.</p>
+          </article>
+
+          <article class="panel system-card">
+            <p class="eyebrow">INSTALL &amp; UPDATES</p>
+            <h3>Installable, offline-ready release</h3>
+            <div id="appInstallStatus" class="app-install-status">Checking browser support…</div>
+            <div class="system-actions"><button id="installAppBtn" disabled>Install app</button><button id="updateAppBtn" class="hidden">Apply update</button></div>
+            <p class="fineprint">Once installed, the app shell is cached for offline startup. Your game save remains local to this browser profile and is not uploaded by Word to the Nations.</p>
+          </article>
+
+          <article class="panel system-card audio-settings-card" id="audioSettingsCard">
+            <p class="eyebrow">SOUND &amp; AUDIO</p>
+            <h3>Quiet, tactile audio identity</h3>
+            <label class="system-toggle"><input type="checkbox" id="audioEnabled"> <span><strong>Enable sound</strong><small>Off by default. Browser audio starts only after a deliberate interaction.</small></span></label>
+            <div class="audio-mixer" aria-label="Audio volume controls">
+              <label class="audio-level" for="audioMaster"><span><strong>Master</strong><output id="audioMasterValue">46%</output></span><input id="audioMaster" type="range" min="0" max="100" step="1" value="46"></label>
+              <label class="audio-level" for="audioUi"><span><strong>UI / work</strong><output id="audioUiValue">42%</output></span><input id="audioUi" type="range" min="0" max="100" step="1" value="42"></label>
+              <label class="audio-level" for="audioMilestones"><span><strong>Milestones</strong><output id="audioMilestonesValue">58%</output></span><input id="audioMilestones" type="range" min="0" max="100" step="1" value="58"></label>
+              <label class="audio-level" for="audioAmbient"><span><strong>Ambient room tone</strong><output id="audioAmbientValue">22%</output></span><input id="audioAmbient" type="range" min="0" max="100" step="1" value="22"></label>
+            </div>
+            <label class="system-toggle"><input type="checkbox" id="audioAmbientEnabled"> <span><strong>Enable ambient room tone</strong><small>A very quiet procedural bed; no looping music track and no downloaded audio file.</small></span></label>
+            <div class="system-actions"><button id="audioTestUi">Test work sound</button><button id="audioTestMilestone">Test milestone</button></div>
+            <div id="audioStatus" class="audio-status" role="status">Sound is off by default.</div>
+            <p class="fineprint">Audio is generated locally with Web Audio and never affects the campaign economy. Your preference is stored separately from the game save.</p>
+          </article>
+
+          <article class="panel system-card" id="accessibilityCard">
+            <p class="eyebrow">ACCESSIBILITY &amp; INPUT</p>
+            <h3>Readable, keyboard-ready controls</h3>
+            <label class="system-toggle"><input type="checkbox" id="keyboardShortcuts"> <span><strong>Enable game shortcuts</strong><small>Form fields always take priority.</small></span></label>
+            <label class="system-toggle"><input type="checkbox" id="confirmEarlyResets"> <span><strong>Confirm compressed resets</strong><small>Warn before manually taking an early Translation or Network reset.</small></span></label>
+            <label class="select-line" for="motionPreference" hidden><span><strong>Motion</strong><small>Follow the device setting by default, or force nonessential motion off.</small></span><select id="motionPreference"><option value="system">Follow device</option><option value="reduce">Reduce motion</option></select></label>
+            <label class="select-line" for="textScale"><span><strong>Interface text size</strong><small>Scales UI text without changing gameplay.</small></span><select id="textScale"><option value="100">100%</option><option value="110">110%</option><option value="120">120%</option></select></label>
+            <label class="select-line" for="contrastPreference"><span><strong>Contrast</strong><small>System keeps the default palette; High strengthens borders, focus, and muted text.</small></span><select id="contrastPreference"><option value="system">System / standard</option><option value="high">High contrast</option></select></label>
+            <div class="shortcut-list"><span><kbd>Ctrl/⌘ S</kbd> Save</span><span id="shortcutTabsLabel"><kbd>Alt 1–0</kbd> Switch visible tabs</span><span><kbd>B</kbd> Cycle buy amount</span><span><kbd>Esc</kbd> Close dialogs or menus</span></div>
+            <p class="fineprint">Keyboard focus remains visible. Device reduced-motion and forced-color preferences are respected automatically.</p>
+          </article>
+        </div>
+      <div class="top-actions" id="topActions" aria-label="Application actions">
+        <span id="saveStatus" class="save-status" role="status" aria-live="polite">Saved</span>
+        <button class="ghost" id="saveBtn" title="Save now (Ctrl/Cmd+S)">Save</button>
+        <button class="ghost" id="exportBtn">Export</button>
+        <button class="ghost" id="importBtn">Import</button><button id="helpMenuBtn" class="ghost mobile-help">Guide</button>
+        <button class="ghost hidden" id="installTopBtn">Install</button>
+        <input id="importFile" type="file" accept="application/json,.json" hidden>
+
+      </div><button id="helpBtn" class="help-button" type="button" aria-label="Open how to play">How to play <span aria-hidden="true">?</span></button><button id="atlasOverviewBtn" class="help-button" hidden type="button">Atlas</button></section></main></section>
+<dialog id="buildingDialog" class="utility-dialog" aria-labelledby="buildingListTitle"><form method="dialog"><button class="dialog-close" aria-label="Close building list">Close</button></form><h2 id="buildingListTitle">Your settlement</h2><p>Select a building to see its contribution, costs and available actions.</p><div id="buildingList"></div></dialog>
+<dialog id="celebrationDialog" class="utility-dialog" aria-labelledby="celebrationTitle"><p class="eyebrow">A PLACE FOR GOOD WORK</p><h2 id="celebrationTitle">Your first manuscript is ready.</h2><p>A book stand now marks the work in your settlement. Production is stronger for this run, and the visible achievement stays with your home.</p><form method="dialog"><button class="primary">Continue</button></form></dialog>
+<div id="compatibilityMount" hidden aria-hidden="true"><div hidden>
+        <div class="chamber-layout"><section class="chamber-stage" aria-label="The Atlas Chamber"><div class="chamber-heading"><span class="eyebrow">SCRIPTORIUM · CAMPAIGN TABLE</span><h2>The Atlas Chamber</h2></div><div id="chamberArt" class="chamber-art" aria-hidden="true"></div><button id="chamberCollapse" class="chamber-collapse" aria-expanded="true" aria-controls="chamberArt">Hide room</button><div class="chamber-caption"><span id="chamberCaption"></span><span id="chamberActivity"></span></div>      <section id="missionAtlas" class="mission-atlas panel" data-atlas-stage="work" aria-labelledby="atlasTitle">
+        <div class="atlas-copy">
+          <p class="eyebrow" id="atlasEyebrow">FIRST PAGE</p>
+          <button id="expandAtlasBtn" type="button" class="expand-atlas" aria-label="Open full Mission Atlas">Expand ↗</button>
+          <h2 id="atlasTitle">Every route begins with careful work.</h2>
+          <p id="atlasNarrative">The atlas begins with one prepared page. Complete the first Translation and the visual record will begin to grow.</p>
+          <div id="atlasLegend" class="atlas-legend" aria-label="Atlas progression summary"></div>
+          <button id="atlasActionBtn" class="atlas-action">Prepare the first Translation</button>
+          <p class="atlas-disclaimer">Symbolic campaign visualization · not a map of real peoples, countries, or mission completion.</p>
+        </div>
+          <div class="atlas-tools" role="group" aria-label="Atlas view controls">
+            <button id="atlasZoomOutBtn" type="button" aria-label="Zoom Atlas out">−</button>
+            <button id="atlasResetViewBtn" type="button">Fit view</button>
+            <button id="atlasZoomInBtn" type="button" aria-label="Zoom Atlas in">+</button>
+            <span id="atlasViewStatus" role="status" aria-live="polite">100%</span>
+          </div>
+        <div id="atlasViewport" class="atlas-canvas-wrap" tabindex="0" role="region" aria-label="Mission Atlas visual workspace" aria-describedby="atlasInteractionHint atlasAccessibleSummary">
+          <p id="atlasInteractionHint" class="atlas-interaction-hint">Scroll or swipe to explore. Use the view controls to zoom. Field nodes can be opened with touch, mouse, Enter, or Space.</p>
+          <div id="atlasAccessibleSummary" class="sr-only"></div>
+          <svg id="atlasSvg" class="atlas-canvas" viewbox="0 0 1200 420" role="group" aria-labelledby="atlasSvgTitle atlasSvgDesc" preserveaspectratio="xMidYMid meet">
+            <title id="atlasSvgTitle">Living Mission Atlas</title>
+            <desc id="atlasSvgDesc">A symbolic visual record of current campaign progression.</desc>
+          </svg>
+        </div>
+        <div id="atlasFieldControls" class="atlas-field-controls hidden"><label for="atlasFieldPicker">Open a Field briefing</label><div><select id="atlasFieldPicker" aria-label="Mission Field to inspect"></select><button id="openAtlasSelectedFieldBtn" type="button">Open briefing</button></div></div>
+      <section id="atlasDossier" class="atlas-dossier hidden" aria-label="Selected field"><div id="atlasDossierText"></div><button id="atlasDossierGo" class="primary">Open field briefing</button><button id="atlasDossierClose">Clear selection</button></section></section></section><aside class="chamber-inspector"><p class="eyebrow">CURRENT DISPATCH</p><section id="workDecisionCockpit" class="decision-cockpit panel" aria-label="Current Work decision"></section><p class="chamber-note">The numbers measure the work.<br>Never its spiritual worth.</p></aside></div>
+        <div class="work-columns"><div class="work-main">
+        <nav class="section-jump-nav" aria-label="Work sections">
+          <button data-section-target="producerWorkspace">Production</button><button data-section-target="methodsWorkspace">Methods</button><button data-section-target="queueWorkspace">Plan orders</button>
+        </nav>
+        
+
+        
+        </div><aside class="work-companion" aria-label="Journey guidance">
+      <details id="campaignOverview" class="campaign-overview">
+        <summary><span><span class="local-dot" aria-hidden="true"></span>Campaign overview</span><span class="overview-hint">Your work, on the map <span aria-hidden="true">⌄</span></span></summary>
+        <div class="overview-grid">
+      <section class="hero panel campaign-hero">
+        <div class="hero-copy">
+          <p class="eyebrow">FROM THE WORD · TO EVERY NATION</p>
+          <h2 id="heroTitle">Begin with a page. Build a work that can travel.</h2>
+          <p class="muted" id="heroDescription">Prepare Scripture work carefully, strengthen the people and methods around it, and bring the first Translation within reach. The game measures stewardship and infrastructure—not spiritual worth or people.</p>
+        </div>
+
+      </section>
+
+
+
+        </div>
+      </details>
+
+      <section id="earlyJourney" class="early-journey panel hidden" aria-label="First Translation guide">
+        <header class="early-journey-head">
+          <div><p class="eyebrow">FIRST TRANSLATION JOURNEY</p><h2 id="earlyJourneyTitle">Begin the production chain.</h2></div>
+          <span id="earlyJourneyChapter" class="early-journey-chapter">Establish the work</span>
+        </header>
+        <div class="early-journey-body">
+          <div class="early-journey-copy">
+            <p id="earlyJourneySummary">Reinvest Pages into the first producer tiers.</p>
+            <div id="earlyJourneyMetrics" class="early-journey-metrics"></div>
+            <button id="earlyJourneyAction" class="primary">Focus current objective</button>
+            <p id="earlyJourneyTip" class="early-journey-tip"></p>
+          </div>
+          <ol id="earlyJourneyRail" class="early-journey-rail" aria-label="First Translation stages"></ol>
+        </div>
+      </section>
+        <details class="how-it-works panel"><summary>The loop, at a glance</summary><ol><li><strong>Build the work.</strong> Pages grow automatically. Producers and Methods accelerate this run.</li><li><strong>Complete Projects.</strong> Finish objectives for stronger production.</li><li><strong>Translate.</strong> Reset this run for permanent Translation Insight. New layers follow.</li></ol><p>Your progress saves locally. Export a copy before changing browsers or devices.</p></details>
+      <div class="layer-status panel" id="layerStatus">
+        <div><span class="eyebrow">CURRENT LAYER</span><strong id="layerStatusTitle">Discover Translation</strong></div>
+        <div class="layer-status-copy"><span id="layerStatusText">Complete your first Translation to unlock permanent Insight.</span><span id="networkPreview">Establish the first Network by earning 1,200 TI during the current Network cycle.</span></div>
+      </div>
+        </aside></div>
+      </div>
+  <noscript><div style="padding:24px;font:16px/1.6 system-ui">Word to the Nations requires JavaScript to run. Enable it in your browser and reopen this complete game file. Your existing saved data has not been changed.</div></noscript>
+  <a class="skip-link" href="#mainContent">Skip to game content</a>
+  <div class="app-shell">
+    <aside class="navigation-rail" aria-label="Campaign navigation">
+      <div class="brand">
+        <div class="brand-mark" aria-hidden="true">W</div>
+        <div>
+          <p class="eyebrow">THE ATLAS CHAMBER</p>
+          <h1>Word to the Nations</h1>
+        </div>
+      </div>
+      <p class="rail-kicker">THE WORK</p>
+      <button id="dockAtlas" class="dock-atlas" aria-label="Open Atlas">◇<span>Atlas</span></button><button id="chamberMore" class="chamber-more" aria-expanded="false" aria-controls="gameTabs">More</button>
+      <div class="rail-journey"><span class="rail-kicker">A WORK THAT TRAVELS</span><ol><li class="current">Prepare</li><li>Translate</li><li>Distribute</li><li>Adapt</li><li>Carry forward</li></ol><p>The numbers measure the work.<br>Never its spiritual worth.</p></div>
+      <div class="rail-bottom"><span class="local-dot" aria-hidden="true"></span>Local-first. Yours to keep.</div>
+    </aside>
+    <header class="topbar">
+      <div class="workspace-heading"><span id="workspaceEyebrow">YOUR CAMPAIGN</span><strong id="workspaceTitle">The Atlas Chamber</strong></div>
+      
+      
+      <button id="mobileMenuButton" class="mobile-menu-button ghost" type="button" aria-expanded="false" aria-controls="topActions" aria-label="Open application actions">
+        <span aria-hidden="true">•••</span><span class="mobile-menu-label">System</span>
+      </button>
+      
+    </header>
+
+    <main id="compatMain" tabindex="-1">
+      
+      <section id="resourceShelf" class="resource-shelf" aria-label="Current resources">        <div class="resource-stack" id="resourceStack" data-count="1">
+          <div class="resource-block compact-resource">
+            <span class="resource-label">Pages</span>
+            
+            
+            <div class="resource-meta"><span>Peak <b id="peakValue">0</b></span><span>Run <b id="runTime">0:00</b></span></div>
+          </div>
+          <div class="resource-block compact-resource ti-resource hidden" data-resource="ti">
+            <span class="resource-label">Translation Insight</span>
+            <strong id="heroTiValue">0</strong>
+            <span id="heroTiMeta">0 lifetime · 0 Translations</span>
+          </div>
+          <div class="resource-block compact-resource network-resource hidden" data-resource="nc">
+            <span class="resource-label">Network Capacity</span>
+            <strong id="heroNcValue">0</strong>
+            <span id="heroNcMeta">0 lifetime · 0 Networks</span>
+          </div>
+          <div class="resource-block compact-resource field-resource hidden" data-resource="fe">
+            <span class="resource-label">Field Experience</span>
+            <strong id="heroFeValue">0</strong>
+            <span id="heroFeMeta">0 lifetime · 0 Fields</span>
+          </div>
+          <div class="resource-block compact-resource legacy-resource hidden" data-resource="legacy">
+            <span class="resource-label">Legacy</span>
+            <strong id="heroLegacyValue">0</strong>
+            <span id="heroLegacyMeta">0 lifetime · 0 Legacies</span>
+          </div>
+        </div><button id="resourceDetailsBtn" type="button" class="resource-details-toggle" aria-expanded="false" aria-controls="resourceShelf">Resource details <span aria-hidden="true">⌄</span></button><div id="resourceReadout" class="resource-readout"></div></section>
+      <div class="progress-strip panel">
+        <div>
+          <span class="eyebrow" id="progressEyebrow">CURRENT TRANSLATION</span>
+          <div class="progress-line"><span id="translationProgress"></span></div>
+        </div>
+        <div class="progress-copy">
+          <strong id="translationProgressText">0 / 1e12 peak Pages</strong>
+          <span id="translationEta">Build the first production chain.</span>
+        </div>
+      </div>
+
+
+
+
+
+
+
+      
+
+      
+
+      
+
+      
+
+      
+
+      
+
+      
+
+      
+
+      
+
+      
+    </main>
+
+    <footer class="release-footer" aria-label="Application information">
+      <span>Word to the Nations</span><span aria-hidden="true">·</span><span id="releaseVersion">v2.10.1</span><span aria-hidden="true">·</span><span>Local-first · no account required</span>
+    </footer>
+
+    
+
+    
+
+    
+
+    
+    
+
+    
+
+    
+
+  </div>
+
+
+  
+  
+  
+  
+  
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+</div><div id="toast" class="toast" role="status" aria-live="polite" aria-atomic="true"></div><div id="offlineModal" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="offlineTitle" aria-describedby="offlineLead" aria-hidden="true">
+      <div class="modal panel">
+        <p class="eyebrow">OFFLINE PROGRESS</p>
+        <h2 id="offlineTitle">While you were away</h2>
+        <p id="offlineLead">Your unlocked automation continued through the same economy used during live play.</p>
+        <div id="offlineSummary" class="offline-summary"></div>
+        <button id="offlineNextBtn" class="primary wide">Next useful action</button><button id="offlineContinueBtn" class="wide">Continue</button>
+      </div>
+    </div><div id="completionModal" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="completionTitle" aria-describedby="completionText" aria-hidden="true">
+      <div class="modal panel">
+        <p class="eyebrow">TRANSLATION COMPLETE</p>
+        <h2 id="completionTitle">Translation Insight is now available.</h2>
+        <p id="completionText">You have crossed the first reset boundary. Permanent Translation development is now open.</p>
+        <div class="completion-result"><span>Translation Insight gained</span><strong id="completionGain">1 TI</strong></div>
+        <button id="continueBtn" class="primary wide">Open Translation Insight</button>
+      </div>
+    </div><div id="masteryModal" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="masteryTitle" aria-hidden="true">
+      <div class="modal panel">
+        <p class="eyebrow">TRANSLATION MASTERY</p>
+        <h2 id="masteryTitle">The Translation layer is operational.</h2>
+        <p>You now have repeatable knowledge, retained preparation, specialization, production automation, Project automation, presets, and automated Translation. Open the Network tab to begin building the second reset layer.</p>
+        <div class="completion-result"><span>Now available</span><strong>Distribution Networks</strong></div>
+        <button id="masteryContinueBtn" class="primary wide">Continue playing</button>
+      </div>
+    </div><div id="phase3Modal" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="phase3Title" aria-hidden="true">
+      <div class="modal panel">
+        <p class="eyebrow">NETWORK MASTERY</p>
+        <h2 id="phase3Title">Mission Fields are now unlocked.</h2>
+        <p>The Network layer is established. Mission Fields now ask you to adapt methods to fictionalized strategic contexts. Their constraints are abstractions, not descriptions or rankings of real cultures.</p>
+        <div class="completion-result"><span>Next system</span><strong>Mission Fields</strong></div>
+        <button id="phase3ContinueBtn" class="primary wide">Open Mission Fields</button>
+      </div>
+    </div><div id="phase4Modal" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="phase4Title" aria-hidden="true">
+      <div class="modal panel">
+        <p class="eyebrow">FIELD MASTERY</p>
+        <h2 id="phase4Title">Legacy is ready.</h2>
+        <p>You have accumulated enough Field Experience to establish durable continuity. Legacy preserves learned methods and compresses solved systems; it does not represent spiritual merit or divine approval.</p>
+        <div class="completion-result"><span>Legacy threshold</span><strong>70 FE reached</strong></div>
+        <button id="phase4ContinueBtn" class="primary wide">Open Legacy</button>
+      </div>
+    </div><div id="phase5Modal" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="phase5Title" aria-hidden="true">
+      <div class="modal panel">
+        <p class="eyebrow">CAMPAIGN COMPLETE</p>
+        <h2 id="phase5Title">To Every Nation</h2>
+        <p>The designed campaign is complete. This ending does not mean real peoples have been reached, mission work is finished, or spiritual fruit can be reduced to a game state. The final horizon points beyond the game to worship before God from every nation, people, tribe, and language.</p>
+        <div class="completion-result"><span>Campaign</span><strong>Word to the Nations complete</strong></div>
+        <button id="phase5ContinueBtn" class="primary wide">Review Scripture Library</button>
+      </div>
+    </div><dialog id="atlasDialog" class="utility-dialog atlas-dialog" aria-label="Mission Atlas"><form method="dialog" class="dialog-heading"><p class="eyebrow">MISSION ATLAS · CAMPAIGN RECORD</p><button class="dialog-close" aria-label="Close full Atlas">×</button></form><div id="atlasDialogBody"></div><p class="fineprint">A symbolic record of the campaign, not a map of real peoples or mission completion. Field nodes open their corresponding briefings.</p></dialog><dialog id="helpDialog" class="utility-dialog" aria-labelledby="helpTitle">
+    <form method="dialog" class="dialog-heading"><p class="eyebrow">FIELD NOTES</p><button class="dialog-close" aria-label="Close how to play">×</button></form>
+    <h2 id="helpTitle">A page. A practice.<br>A work that travels.</h2>
+    <p>Build the human work around Scripture: preparation, translation practice, distribution, and lasting methods.</p>
+    <ol class="guide-steps"><li><span>01</span><div><strong>Reinvest your Pages</strong><p>They accumulate automatically. Begin with a Scribe, then reach higher producer tiers. Buy Methods for one-run improvements.</p></div></li><li><span>02</span><div><strong>Complete the Projects</strong><p>Requirements are shown in Projects. Finish them to strengthen the current run.</p></div></li><li><span>03</span><div><strong>Choose when to Translate</strong><p>At the threshold, reset Pages and this run’s development for Translation Insight. Insight purchases are permanent across Translations.</p></div></li></ol>
+    <div class="guide-note">The campaign gradually opens Networks, Mission Fields, and Legacy. Scripture is for reading and reflection, never a stat bonus.</div>
+    <form method="dialog"><button class="primary wide">Return to the work</button></form>
+  </dialog><dialog id="campaignCelebration" class="utility-dialog" aria-labelledby="campaignCelebrationTitle"><form method="dialog"><p class="eyebrow">TO EVERY NATION</p><h2 id="campaignCelebrationTitle">The work carries on.</h2><div class="finale-art" aria-hidden="true"></div><p>The reading court now stands in your settlement: a place to remember the manuscripts, journeys and people who shared the work. Your completed campaign remains available to explore.</p><button class="primary wide">Return to your settlement</button></form></dialog><dialog id="exportDialog" class="utility-dialog" aria-labelledby="exportTitle">
+    <form method="dialog" class="dialog-heading"><p class="eyebrow">YOUR SAVE, YOUR COPY</p><button class="dialog-close" aria-label="Close export">×</button></form>
+    <h2 id="exportTitle">Keep a copy of your work.</h2><p>Progress-only saves remain compatible with earlier editions. A Full backup also carries your decoration locations; device quality, motion and audio stay local.</p>
+    <label for="exportText" class="eyebrow">Checksummed save</label><textarea id="exportText" readonly rows="6" spellcheck="false"></textarea>
+    <div class="system-actions"><button id="fullBackupBtn">Full backup · progress + arrangement</button><button id="progressOnlyBtn">Progress only</button><button id="downloadSaveBtn" class="primary">Download save</button><button id="copySaveBtn">Copy save text</button></div><p id="exportFeedback" role="status"></p>
+  </dialog><dialog id="importDialog" class="utility-dialog" aria-labelledby="importTitle">
+    <form method="dialog" class="dialog-heading"><p class="eyebrow">CONTINUE YOUR CAMPAIGN</p><button class="dialog-close" aria-label="Close import">×</button></form>
+    <h2 id="importTitle">Bring your save with you.</h2><p>Your current progress is kept as a recovery snapshot when a valid save is imported. Invalid saves will not replace it.</p>
+    <button id="chooseSaveFileBtn">Choose a save file</button><label for="importText" class="eyebrow">Or paste save text</label><textarea id="importText" rows="5" spellcheck="false" placeholder="Paste the entire exported save here"></textarea>
+    <button id="importTextBtn" class="primary wide">Validate and import</button><p id="importFeedback" role="status"></p>
+  </dialog><dialog id="confirmDialog" class="utility-dialog" aria-labelledby="confirmTitle">
+    <p class="eyebrow">CHECK BEFORE CONTINUING</p><h2 id="confirmTitle">Replace current progress?</h2><p id="confirmMessage"></p><div class="system-actions"><button id="cancelConfirmBtn">Cancel</button><button id="acceptConfirmBtn" class="primary">Continue</button></div>
+  </dialog><div id="storageWarning" class="storage-warning hidden" role="status">This browser is not retaining saves. Use Export before closing to keep your progress.</div><script src="ui-renderer.js"></script><script src="bignum.js"></script><script src="game-core.js"></script><script src="save-format.js"></script><script src="content.js"></script><script src="content-depth.js"></script><script src="disclosure.js"></script><script src="ux-architecture.js"></script><script src="atlas.js"></script><script src="art.js"></script><script src="motion.js"></script><script src="audio.js"></script><script src="early-game.js"></script><script src="midgame-depth.js"></script><script src="field-depth.js"></script><script src="legacy-depth.js"></script><script src="scripture-data.js"></script><script src="workshop-model.js"></script><script src="presentation-disclosure.js"></script><script src="secondary-screens.js"></script><script src="workshop-screens.js"></script><script src="settlement-assets.js"></script><script src="crafted-assets.js"></script><script src="presentation-language.js"></script><script src="asset-loader.js"></script><script src="settlement-clips.js"></script>
+<script src="settlement-animation.js"></script><script src="settlement-model.js"></script><script src="appearance-model.js"></script><script src="visual-preferences.js"></script><script src="full-backup.js"></script><script src="worker-painter.js"></script><script src="journey-presentation.js"></script><script src="settlement-painter.js"></script><script src="settlement-layout.js"></script><script src="settlement-scene.js"></script><script src="settlement-controller.js"></script><script src="app.js"></script></body>
+</html>

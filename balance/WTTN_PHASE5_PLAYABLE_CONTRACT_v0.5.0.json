@@ -1,0 +1,110 @@
+{
+  "game": "Word to the Nations",
+  "phase": "Phase 5 — Legacy + Campaign",
+  "version": "0.5.0",
+  "status": "playable-contract",
+  "inherits": [
+    "WTTN_PHASE4_PLAYABLE_CONTRACT_v0.4.0.json",
+    "WTTN_PHASE3_PLAYABLE_CONTRACT_v0.3.0.json",
+    "WTTN_BALANCE_CONTRACT_v0.2.0.json"
+  ],
+  "legacy": {
+    "unlock_fe_per_era": 70,
+    "gain_exponent": 0.60,
+    "gain_scale": 15,
+    "formula": "floor(max(1, (FE_this_legacy / 70)^0.60 * 15))",
+    "campaign_lifetime_target": 100,
+    "network_threshold_compression": "1800 / (1 + min(7, sqrt(lifetimeLegacy)))",
+    "field_threshold_compression": "fieldBase * fieldRewardMult * traditionMult / (1 + min(4, sqrt(lifetimeLegacy)))",
+    "page_power_cap": 3,
+    "page_power_formula": "min(3, 1 + 0.25 * log10(1 + lifetimeLegacy))"
+  },
+  "legacy_milestones": [
+    { "lifetimeLegacy": 1, "id": "foundationalMethods", "effect": "start with first three Page Methods" },
+    { "lifetimeLegacy": 2, "id": "projectsVisible", "effect": "Projects treated as known from cycle start" },
+    { "lifetimeLegacy": 3, "id": "buyMax", "effect": "retain Buy Max" },
+    { "lifetimeLegacy": 5, "id": "specializationRetained", "effect": "retain Translation specialization" },
+    { "lifetimeLegacy": 8, "id": "automation", "effect": "retain base producer automation" },
+    { "lifetimeLegacy": 12, "id": "translationUnlocked", "effect": "restore early Translation development chain" },
+    { "lifetimeLegacy": 20, "id": "firstTranslationCompressed", "effect": "begin recovery with 10 TI" },
+    { "lifetimeLegacy": 30, "id": "networkPresets", "effect": "retain Distribution presets" },
+    { "lifetimeLegacy": 50, "id": "networkRecovery", "effect": "begin higher resets with established NC" },
+    { "lifetimeLegacy": 75, "id": "fieldRetention", "effect": "Field entry no longer requires fresh external NC" },
+    { "lifetimeLegacy": 100, "id": "finalSequence", "effect": "unlock final campaign sequence after canonical Field mastery" }
+  ],
+  "traditions": [
+    { "id": "translation", "effects": ["+1 effective Preparation", "Translation specialization effect +10% relative"] },
+    { "id": "teaching", "effects": ["milestone output x1.10", "Project effects x1.20"] },
+    { "id": "distribution", "effects": ["normal allocation cap +5 percentage points", "retain Infrastructure Lv1 through higher resets"] },
+    { "id": "pioneer", "effects": ["Field NC requirements x0.90", "cleared Field rewards remain permanent"] }
+  ],
+  "mature_field": {
+    "id": "mature-field",
+    "repeatable": true,
+    "tier": 3,
+    "base_nc_threshold": 20,
+    "difficulty": 4.0,
+    "page_multiplier": 0.65,
+    "ti_multiplier": 1.10,
+    "valid_networks_required": 1,
+    "purpose": "renewable FE after the nine canonical Fields without adding more permanent Field rewards"
+  },
+  "scripture_library": {
+    "direct_power": false,
+    "collections": [
+      { "id": "torah", "unlock": "first Translation" },
+      { "id": "history", "unlock": "Translation Automation reached" },
+      { "id": "wisdom", "unlock": "first Network" },
+      { "id": "prophets", "unlock": "first Field clear" },
+      { "id": "gospels", "unlock": "three canonical Field clears" },
+      { "id": "acts", "unlock": "all five Tier-I Fields cleared" },
+      { "id": "epistles", "unlock": "first Legacy" },
+      { "id": "revelation", "unlock": "final campaign sequence available" }
+    ]
+  },
+  "campaign_completion": {
+    "lifetime_legacy": 100,
+    "tier1_fields": 5,
+    "tier2_fields": 3,
+    "tier3_fields": 1,
+    "explicit_final_action": true,
+    "title": "To Every Nation"
+  },
+  "certified_reference": {
+    "translation_automation_hours": 6.83,
+    "first_network_hours": 10.17,
+    "first_field_hours": 30.25,
+    "first_field_clear_hours": 38.33,
+    "third_field_days": 3.29,
+    "legacy_ready_days": 4.34,
+    "first_legacy_days": 4.34,
+    "all_canonical_fields_days": 8.16,
+    "final_sequence_days": 12.65,
+    "campaign_complete_days": 12.65,
+    "legacies": 4,
+    "lifetime_legacy": 111,
+    "mature_field_clears": 9,
+    "fastest_translation_seconds": 696,
+    "fastest_network_seconds": 7200
+  },
+  "tradition_benchmark_days": {
+    "translation": 12.667,
+    "teaching": 12.590,
+    "distribution": 12.646,
+    "pioneer": 12.594
+  },
+  "reset_strategy_checks": {
+    "aggressive_legacy_days": 10.344,
+    "normal_legacy_days": 12.646,
+    "patient_legacy_days": 16.135,
+    "interpretation": "aggressive timing remains above the original 8-day optimized floor; intentionally patient play is slower but still finite"
+  },
+  "hard_gates": {
+    "normal_campaign_days": [10, 14.5],
+    "first_legacy_days": [4, 6],
+    "canonical_fields_complete_days": [6, 11],
+    "translation_reset_collapse_seconds": 90,
+    "network_reset_collapse_seconds": 300,
+    "minimum_lifetime_legacy_for_final": 100
+  }
+}

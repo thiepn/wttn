@@ -1,0 +1,56 @@
+{
+  "game": "Word to the Nations",
+  "playablePhase": 3,
+  "version": "0.3.0",
+  "status": "certified",
+  "sourceBalancePrototype": "v0.2.0",
+  "translationLayer": {
+    "thresholdPages": "1e12",
+    "exponent": 0.65,
+    "preNetworkReadinessSeconds": 600,
+    "postNetworkReadinessSeconds": 1200,
+    "readinessPower": 1.2,
+    "minimumReadiness": 0.25,
+    "phase2RegressionAutomationHours": 6.83,
+    "specializationSpread": 1.309
+  },
+  "networkLayer": {
+    "baseThresholdTiThisNetwork": 1800,
+    "prototypeV02Threshold": 2800,
+    "thresholdAdjustmentReason": "Phase 2 split Basic and Full Production Automation into non-redundant stages. The literal playable economy therefore earns TI more slowly than the v0.2 mathematical prototype. The Network threshold is locally recalibrated instead of buffing global production.",
+    "gainExponent": 0.3,
+    "repeatReadinessSeconds": 7200,
+    "repeatReadinessPower": 1.1,
+    "repeatMinimumReadiness": 0.3,
+    "baseProducerAutomationPermanentAfterFirstNetwork": true,
+    "projectAutomationPersistsByDefault": false,
+    "translationAutomationPersistsByDefault": false,
+    "infrastructure": {
+      "costBase": 2,
+      "costGrowth": 5,
+      "effectGrowth": 1.35,
+      "maxLevel": 12
+    },
+    "allocation": {
+      "maxPerChannel": 0.7,
+      "local": "1 + 4*a^0.8*exp(-networkRunSeconds/600)",
+      "regional": "1 + 2*a^0.8",
+      "international": "1 + 1.5*a^0.8",
+      "digitalProjectDivisor": "1/(1 + 2*a^0.7)"
+    }
+  },
+  "fieldUnlock": {
+    "lifetimeNc": 6,
+    "ncThisFieldMinimum": 1,
+    "phase3StopsAtUnlock": true
+  },
+  "timingCertification": {
+    "firstNetworkHours": 10.17,
+    "firstNetworkAllowedHours": [7, 12],
+    "fieldUnlockHours": 30.17,
+    "fieldUnlockAllowedHours": [30, 42],
+    "networksAtFieldUnlock": 6,
+    "fastestNetworkHours": 4.0,
+    "minimumNetworkResetSeconds": 300
+  }
+}

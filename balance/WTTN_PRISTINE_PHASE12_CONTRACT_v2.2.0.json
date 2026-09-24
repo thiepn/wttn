@@ -1,0 +1,34 @@
+{
+  "game": "Word to the Nations",
+  "version": "2.2.0",
+  "phase": "Pristine Phase 12 — Content Expansion & Christian Quality Pass",
+  "status": "certified",
+  "mechanicsPolicy": "content-and-presentation-only",
+  "content": {
+    "baseScriptureReferences": 125,
+    "expandedLibraryReadingReferences": 26,
+    "combinedSuggestedScriptureEntries": 151,
+    "libraryDeepDives": 8,
+    "historicalNotes": 6,
+    "institutionalSources": 8,
+    "fieldContextNotes": 10,
+    "journalReflections": 10,
+    "globalGuardrails": 8
+  },
+  "qualityGates": {
+    "scriptureHistoryGameAbstractionSeparated": true,
+    "noSacredOutcomeCurrency": true,
+    "accessNotEquatedWithConversion": true,
+    "noCultureDifficultyRanking": true,
+    "noProsperityImplication": true,
+    "sufferingNotSimulated": true,
+    "campaignCompletionNotRealMissionCompletion": true,
+    "historicalNotesSourced": true
+  },
+  "engineProvenance": {
+    "baseline": "2.1.0",
+    "gameCoreByteIdentical": true,
+    "saveFormatByteIdentical": true,
+    "saveSchema": 6
+  }
+}

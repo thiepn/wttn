@@ -1,0 +1,9 @@
+dist/
+node_modules/
+__pycache__/
+*.pyc
+.env
+.env.*
+recovery/
+*full-backup.json
+docs/qa*/

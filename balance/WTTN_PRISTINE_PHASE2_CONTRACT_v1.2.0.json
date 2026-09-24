@@ -1,0 +1,55 @@
+{
+  "game": "Word to the Nations",
+  "version": "1.2.0",
+  "phase": "Pristine Phase 2 \u2014 Complete UX Architecture Rebuild",
+  "status": "PASS",
+  "economyChanged": false,
+  "saveSchemaChanged": false,
+  "disclosureChanged": false,
+  "decisionTabs": [
+    "work",
+    "projects",
+    "translation",
+    "insight",
+    "network",
+    "fields",
+    "legacy"
+  ],
+  "workspaces": [
+    "producerWorkspace",
+    "methodsWorkspace",
+    "translationResetWorkspace",
+    "practiceWorkspace",
+    "developmentWorkspace",
+    "specializationWorkspace",
+    "automationWorkspace",
+    "networkResetWorkspace",
+    "distributionWorkspace",
+    "networkDevelopmentWorkspace",
+    "fieldChallengeWorkspace",
+    "fieldMapWorkspace",
+    "fieldLegacyWorkspace",
+    "legacyResetWorkspace",
+    "legacyDevelopmentWorkspace",
+    "traditionWorkspace",
+    "campaignWorkspace"
+  ],
+  "certifiedResults": {
+    "translationAutomationHours": 6.83,
+    "firstNetworkHours": 10.17,
+    "firstFieldHours": 30.25,
+    "legacyReadyDays": 4.34,
+    "referenceCampaignDays": 12.59,
+    "activeCampaignDays": 12.49,
+    "craftedOptimizerDays": 8.706,
+    "fastestFuzzDays": 8.452
+  },
+  "sensitivityMaxRatio": 1.188,
+  "coreHashes": {
+    "bignum.js": "e82c0610df6ba4a3c3fed209c9ff49e2d9365f380f781eb0e4207e09b7639467",
+    "game-core.js": "11c6aca3be70a43ccef38742ecb0d291e2802b68ba7980a80646a31aaf7f8bb6",
+    "save-format.js": "9b90e1c305a86490aa5ffa22269ef4720fdf98dce2614047a68b6d9c089fab50",
+    "content.js": "a66f3c809fbd2083ffa67e04f8c92e79fa8cc7e3c657ac13e517b0e5721f9465",
+    "disclosure.js": "d6e880c05265697ace9af619738bee379e76745f790b590140159b07efaec1e4"
+  }
+}
