@@ -1,6 +1,6 @@
 # GitHub Pages
 
-This repository publishes to https://thiepn.github.io/wttn/ through GitHub Actions. Each successful main-branch build runs the existing tests before deployment.
+This repository publishes to https://thiepn.dev/wttn/ through GitHub Actions, using the account's existing Pages domain. Each successful main-branch build runs the existing tests before deployment.
 
 ## Source workflow
 

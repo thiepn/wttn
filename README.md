@@ -1,6 +1,6 @@
 # Word to the Nations — v2.10.1
 
-[Play Word to the Nations](https://thiepn.github.io/wttn/) · [Deployment status](https://github.com/thiepn/wttn/actions/workflows/pages.yml)
+[Play Word to the Nations](https://thiepn.dev/wttn/) · [Deployment status](https://github.com/thiepn/wttn/actions/workflows/pages.yml)
 
 This patch repairs oversized ledger icons, disappearing Projects navigation, cramped equipment buttons, phone/landscape sheets, decoration placement and overview framing. See [the v2.10.1 repair report](UI-FIX-REPORT.md) for current verification. The original v2.10 documents below describe the larger visual release; their older performance captures are not new measurements for this patch.
 
