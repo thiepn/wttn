@@ -14,11 +14,11 @@ vm.runInContext(text('content-depth.js'), ctx);
 const C = ctx.WTTNContent;
 const K = ctx.WTTNContentDepth;
 
-assert.strictEqual(JSON.parse(text('package.json')).version, '2.10.2');
-assert(text('app.js').includes("const APP_VERSION = '2.10.2'"));
+assert.strictEqual(JSON.parse(text('package.json')).version, '2.10.3');
+assert(text('app.js').includes("const APP_VERSION = '2.10.3'"));
 assert(text('sw.js').includes("const BUILD='__BUILD_ID__'"));
-assert(text('index.html').includes('id="releaseVersion">v2.10.2'));
-assert(text('README.md').includes('# Word to the Nations — v2.10.2'));
+assert(text('index.html').includes('id="releaseVersion">v2.10.3'));
+assert(text('README.md').includes('# Word to the Nations — v2.10.3'));
 assert(require('fs').readFileSync(require('path').join(__dirname,'../dist/web/index.html'), 'utf8').includes(JSON.parse(require('fs').readFileSync(require('path').join(__dirname,'../dist/build-manifest.json'),'utf8')).assets['content-depth.js']), 'module must be included in cached document');
 assert(text('index.html').includes('<script src="content-depth.js"></script>'));
 

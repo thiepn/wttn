@@ -25,4 +25,26 @@ test('an interface error after a verified write cannot report data loss',()=>{co
 test('retry clears the warning only after a verified successful save',()=>{const t=setup({getItem:()=>null,setItem(){throw new Error('temporary');}});assert(!t.save());assert(!t.node('storageWarning').hidden);t.context.window.localStorage=store();assert(t.save(true));assert(t.node('storageWarning').hidden);assert.equal(t.node('storageWarningText').textContent,'');assert.equal(t.node('saveStatus').textContent,'Saved');});
 test('quarantine continues to protect stored recovery data',()=>{const t=setup();t.storage.setItem(KEY,'unreadable');t.context.saveQuarantined=true;assert(!t.save());assert.equal(t.storage.getItem(KEY),'unreadable');assert.equal(t.node('saveStatus').textContent,'Recovery needed');});
 test('warning is natively hidden and empty before scripts run',()=>{assert.match(html,/<aside id="storageWarning"[^>]* hidden /);assert.match(html,/<p id="storageWarningText"[^>]*><\/p>/);assert(html.indexOf('src="save-storage.js"')<html.indexOf('src="app.js"'));assert(app.includes("$('retrySaveBtn').onclick = () => save(true)"));assert(app.includes("$('exportWarningBtn').onclick = () => $('exportBtn').click()"));});
+test('visible warning cascade cannot combine top anchoring with bottom positioning',()=>{
+ const path=require('node:path'),resolved={};let order=0;
+ // Resolve the actual warning selectors across both shipped stylesheets.
+ for(const file of ['shared-components.css','settlement.css']){
+  const css=fs.readFileSync(path.join(__dirname,'..',file),'utf8');
+  for(const rule of css.matchAll(/([^{}]+)\{([^{}]*)\}/g)){
+   for(const selector of rule[1].split(',').map(s=>s.trim())){
+    const specificity={'*':0,'aside':1,'.storage-warning':10,'#storageWarning':100}[selector];
+    if(specificity===undefined)continue;
+    for(const declaration of rule[2].split(';')){
+     const split=declaration.indexOf(':');if(split<0)continue;
+     const property=declaration.slice(0,split).trim(),value=declaration.slice(split+1).trim();
+     const score=specificity+(value.includes('!important')?1000:0),prior=resolved[property];
+     if(!prior||score>=prior.score)resolved[property]={value,score,order:order++};
+    }
+   }
+  }
+ }
+ assert.equal(resolved.top.value,'auto');assert.equal(resolved.right.value,'auto');
+ assert.equal(resolved.height.value,'auto');assert.equal(resolved.left.value,'50%');
+ assert.equal(resolved.background.value,'#fff4d9');
+});
 console.log(`${passed} save-storage regression groups passed`);

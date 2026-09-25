@@ -16,8 +16,8 @@ const app = text('app.js');
 const sw = text('sw.js');
 const pkg = JSON.parse(text('package.json'));
 
-assert.strictEqual(pkg.version, '2.10.2');
-assert(app.includes("const APP_VERSION = '2.10.2'"));
+assert.strictEqual(pkg.version, '2.10.3');
+assert(app.includes("const APP_VERSION = '2.10.3'"));
 assert(sw.includes("const BUILD='__BUILD_ID__'"));
 assert(require('fs').readFileSync(require('path').join(__dirname,'../dist/web/index.html'), 'utf8').includes(JSON.parse(require('fs').readFileSync(require('path').join(__dirname,'../dist/build-manifest.json'),'utf8')).assets['ux-architecture.js']), 'module must be included in the cached document');
 assert(html.includes('<script src="ux-architecture.js"></script>'));

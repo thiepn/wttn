@@ -1,6 +1,8 @@
-# Word to the Nations — v2.10.2
+# Word to the Nations — v2.10.3
 
 [Play Word to the Nations](https://thiepn.dev/wttn/) · [Deployment status](https://github.com/thiepn/wttn/actions/workflows/pages.yml)
+
+v2.10.3 removes an obsolete, higher-specificity save-warning rule that combined with the new layout to create a clipped brown column. The warning now has one layout definition, stays inside desktop and phone viewports, and keeps Export and Retry accessible. Storage-failure and save-integrity behavior is unchanged.
 
 v2.10.2 fixes misleading save warnings: it verifies the actual save by reading it back, removes the redundant storage probe, distinguishes save preparation from storage failures, and offers Retry saving and Export progress when needed. Run `npm run test:saving` for the regression cases. No economic formulas, storage keys or save formats changed.
 

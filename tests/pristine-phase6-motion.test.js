@@ -37,7 +37,7 @@ const app = text('app.js');
 const css = text('styles.css');
 const sw = text('sw.js');
 const pkg = JSON.parse(text('package.json'));
-assert.strictEqual(pkg.version, '2.10.2');
+assert.strictEqual(pkg.version, '2.10.3');
 assert(html.includes('<script src="motion.js"></script>'));
 assert(html.indexOf('motion.js') < html.indexOf('app.js'));
 assert(require('fs').readFileSync(require('path').join(__dirname,'../dist/web/index.html'), 'utf8').includes(JSON.parse(require('fs').readFileSync(require('path').join(__dirname,'../dist/build-manifest.json'),'utf8')).assets['motion.js']), 'module must be included in the cached document');
@@ -53,4 +53,4 @@ for (const token of [
 ]) assert(css.includes(token), `missing motion CSS ${token}`);
 assert(!/transition\([^)]*innerHTML/i.test(text('motion.js')), 'motion transitions should not inject dynamic innerHTML');
 
-console.log('Pristine Phase 6 motion/game feel: PASS · discrete feedback · reset transitions · atlas motion · reduced-motion contract · v2.10.2');
+console.log('Pristine Phase 6 motion/game feel: PASS · discrete feedback · reset transitions · atlas motion · reduced-motion contract · v2.10.3');
