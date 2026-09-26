@@ -28,7 +28,7 @@ jobs:
           node tests/visual-release.test.js
           node tests/settlement-v210.test.js
           node tests/economic-v210.test.js
-          node tests/save-storage.test.js
+          npm run test:saving
           node tests/ui-repair.test.js
           node tests/audit-repairs.test.js
           node tests/delivery.test.js
