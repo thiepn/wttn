@@ -211,6 +211,8 @@
   let storageAvailable = true;
   let warnedAboutStorage = false;
   let healthCache = { at: 0, value: null };
+  let durableStorageActive = String(loaded.source || '').startsWith('indexeddb');
+  let saveChain = Promise.resolve(true);
 
 
   function modalFocusable(modal) {
@@ -382,6 +384,48 @@
     for (const key of LEGACY_SAVE_KEYS) storageRemove(key);
   }
 
+  function finishSaveSuccess(show = false) {
+    storageAvailable = true;
+    warnedAboutStorage = false;
+    state.lastSavedAt = Date.now();
+    healthCache.at = 0;
+    try {
+      setStorageWarning();
+      updateSaveStatus('Saved');
+      if (show) toast('Saved');
+    } catch (error) { console.warn('Save retained; save-status display could not refresh.', error); }
+    return true;
+  }
+
+  function finishSaveFailure(reason, show = false) {
+    storageAvailable = false;
+    if (!warnedAboutStorage) { console.warn('Persistent saving is unavailable; export remains available.'); warnedAboutStorage = true; }
+    updateSaveStatus('Export-only', 'error');
+    setStorageWarning(window.WTTNSaveStorage.message(reason));
+    if (show) toast('Could not save persistently');
+    return false;
+  }
+
+  async function persistDurable(envelope, { backup = true, show = false, localResult = null } = {}) {
+    const durable = await window.WTTNSaveStorage.durableCommit(SAVE_KEY, BACKUP_KEY, envelope, { backup });
+    if (durable.ok) {
+      durableStorageActive = true;
+      pruneObsoleteSaveCopies();
+      storageRemove(BACKUP_KEY);
+      window.WTTNSaveStorage.write(() => window.localStorage, SAVE_KEY, envelope);
+      return finishSaveSuccess(show);
+    }
+    if (localResult?.ok) return true;
+    const reason = durable.reason === 'unsupported' ? (localResult?.reason || 'unavailable') : durable.reason;
+    return finishSaveFailure(reason || 'unavailable', show);
+  }
+
+  function queueDurableSave(envelope, options, localResult) {
+    const task = () => persistDurable(envelope, { ...options, localResult });
+    saveChain = saveChain.then(task, task);
+    return saveChain;
+  }
+
   function save(show = false, { backup = true } = {}) {
     if (saveQuarantined) { updateSaveStatus('Recovery needed', 'error'); return false; }
     let envelope;
@@ -404,59 +448,47 @@
       } catch { /* never back up corrupt bytes */ }
     }
 
-    // The current save is the priority write. Writing a duplicate backup first can
-    // consume the final bytes of the origin-wide localStorage quota and make the
-    // real save fail even though replacing it would otherwise fit.
     let result = window.WTTNSaveStorage.write(() => window.localStorage, SAVE_KEY, envelope);
     let reclaimedForPrimary = false;
     if (!result.ok && result.reason === 'quota') {
-      // Obsolete version keys are always redundant once the current in-memory
-      // state has been prepared successfully, so reclaim them before touching a
-      // recovery backup.
       pruneObsoleteSaveCopies();
       result = window.WTTNSaveStorage.write(() => window.localStorage, SAVE_KEY, envelope);
     }
     if (!result.ok && result.reason === 'quota' && previousIsValid) {
-      // A valid current primary makes the separate backup redundant. Remove that
-      // duplicate only as a last app-owned reclaim step, then retry once. If the
-      // primary is invalid (for example after loading from backup), preserve the
-      // recovery copy rather than risking the only known-good stored save.
       storageRemove(BACKUP_KEY);
       reclaimedForPrimary = true;
       result = window.WTTNSaveStorage.write(() => window.localStorage, SAVE_KEY, envelope);
     }
-    if (!result.ok) {
-      storageAvailable = false;
-      if (!warnedAboutStorage) { console.warn('Local saving is unavailable; export remains available.'); warnedAboutStorage = true; }
-      updateSaveStatus('Export-only', 'error');
-      setStorageWarning(window.WTTNSaveStorage.message(result.reason));
-      if (show) toast('Could not save locally');
-      return false;
+
+    if (result.ok) {
+      pruneObsoleteSaveCopies();
+      if (backupCandidate && !reclaimedForPrimary && !window.indexedDB) storageSet(BACKUP_KEY, backupCandidate);
+      finishSaveSuccess(show);
+      if (window.indexedDB) queueDurableSave(envelope, { backup, show: false }, result);
+      return true;
     }
 
-    // Once a current schema save is verified, old version keys are redundant.
-    // Removing them prevents this app from permanently accumulating full-save
-    // duplicates under the shared thiepn.dev localStorage quota.
-    pruneObsoleteSaveCopies();
-    if (backupCandidate && !reclaimedForPrimary) storageSet(BACKUP_KEY, backupCandidate);
+    if (window.indexedDB) {
+      updateSaveStatus('Saving…', 'dirty');
+      queueDurableSave(envelope, { backup, show }, result);
+      return true;
+    }
+    return finishSaveFailure(result.reason, show);
+  }
 
-    // Storage success must not be reclassified as data loss by a UI error.
-    storageAvailable = true;
-    warnedAboutStorage = false;
-    state.lastSavedAt = Date.now();
-    healthCache.at = 0;
-    try {
-      setStorageWarning();
-      updateSaveStatus('Saved');
-      if (show) toast('Saved locally');
-    } catch (error) { console.warn('Save retained; save-status display could not refresh.', error); }
-    return true;
+  async function saveAndWait(show = false, options = {}) {
+    if (!save(show, options)) return false;
+    try { return await saveChain; } catch (error) {
+      console.warn('Queued save failed', error);
+      return false;
+    }
   }
 
   function saveHealthText(force = false) {
     if (!force && healthCache.value && Date.now() - healthCache.at < 2000) return healthCache.value;
     let primary = 'missing', backup = 'missing';
     try { const raw = storageGet(SAVE_KEY); if (raw) { parseSaveText(raw); primary = 'valid'; } } catch { primary = 'invalid'; }
+    if (durableStorageActive) primary = 'valid';
     try { const raw = storageGet(BACKUP_KEY); if (raw) { parseSaveText(raw); backup = 'valid'; } } catch { backup = 'invalid'; }
     healthCache = { at: Date.now(), value: { primary, backup } };
     return healthCache.value;
