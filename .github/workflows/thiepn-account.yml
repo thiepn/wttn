@@ -1,0 +1,12 @@
+name: THIEPN Account Contract
+on:
+  pull_request:
+  push:
+    branches: [main]
+permissions:
+  contents: read
+jobs:
+  account-contract:
+    uses: thiepn/thiepn.github.io/.github/workflows/account-consumer-conformance.yml@169e083f268e895cd44d8a5fe706ba5d4532bfa2
+    with:
+      platform_ref: 169e083f268e895cd44d8a5fe706ba5d4532bfa2

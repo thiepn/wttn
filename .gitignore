@@ -7,3 +7,4 @@ __pycache__/
 recovery/
 *full-backup.json
 docs/qa*/
+supabase/.temp/

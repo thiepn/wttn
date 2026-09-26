@@ -7,8 +7,8 @@ const pkg = JSON.parse(fs.readFileSync(path.join(root, 'package.json'), 'utf8'))
 const app = fs.readFileSync(path.join(root, 'app.js'), 'utf8');
 const sw = fs.readFileSync(path.join(root, 'sw.js'), 'utf8');
 
-assert.strictEqual(pkg.version, '2.10.4');
-assert(app.includes("const APP_VERSION = '2.10.4'"));
+assert.strictEqual(pkg.version, '2.11.0');
+assert(app.includes("const APP_VERSION = '2.11.0'"));
 assert(sw.includes("const BUILD='__BUILD_ID__'"));
 
 // No explicit pixel font sizes below the 11px label floor.
@@ -55,4 +55,4 @@ for (const [name,fg,bg] of pairs) {
 assert(css.includes('.hero-copy p:last-child { font-size:15px; line-height:1.68; }'));
 assert(css.includes('.decision-copy > p:last-child { font-size:14px; }'));
 
-console.log('Pristine Phase 3 typography/readability contract: PASS · typography tokens and Atlas Chamber palette pairs · v2.10.4 (not a full accessibility audit)');
+console.log('Pristine Phase 3 typography/readability contract: PASS · typography tokens and Atlas Chamber palette pairs · v2.11.0 (not a full accessibility audit)');
