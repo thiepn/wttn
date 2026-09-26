@@ -2191,7 +2191,7 @@
     renderSystem();
   };
   $('restoreBackupBtn').onclick = async () => {
-    const raw = storageGet(BACKUP_KEY); if (!raw) return;
+    const raw = storageGet(BACKUP_KEY) || await window.WTTNSaveStorage.durableGet(BACKUP_KEY); if (!raw) return;
     try {
       const parsed = parseSaveText(raw);
       if (!await ask('Restore the recovery backup? Your current primary save will be replaced.', 'Restore recovery snapshot?')) return;
