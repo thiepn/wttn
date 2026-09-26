@@ -64,7 +64,7 @@
     return `≈ ${fmtTime(sec)}`;
   };
 
-  function storageGet(key) { try { return window.localStorage?.getItem(key) ?? null; } catch { return null; } }
+  function storageGet(key) { try { return window.WTTNSaveStorage.decode(window.localStorage?.getItem(key) ?? null); } catch { return null; } }
   function storageSet(key, value) { return window.WTTNSaveStorage.write(() => window.localStorage, key, value).ok; }
   function storageRemove(key) { try { window.localStorage?.removeItem(key); return true; } catch { return false; } }
 
