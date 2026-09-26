@@ -70,5 +70,5 @@ assert(require('fs').readFileSync(require('path').join(__dirname,'../dist/web/in
 assert(app.includes('const E = window.WTTNEarlyGame'));
 assert(app.includes('function renderEarlyJourney()'));
 assert(css.includes('.early-journey'));
-assert.strictEqual(JSON.parse(text('package.json')).version,'2.10.5');
+assert.strictEqual(JSON.parse(text('package.json')).version,'2.10.6');
 console.log(`Pristine Phase 8 early game: PASS · first Project ${(at.manuscript/60).toFixed(2)}m · all Projects ${(at.teaching/60).toFixed(2)}m · Scriptorium ${(at.scriptorium/60).toFixed(2)}m · threshold ${(at.threshold/60).toFixed(2)}m · mature guide 25m`);

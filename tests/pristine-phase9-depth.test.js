@@ -77,8 +77,8 @@ assert.strictEqual(X.version, '1.9.0');
   assert(html.includes('<script src="midgame-depth.js"></script>'));
   assert(require('fs').readFileSync(require('path').join(__dirname,'../dist/web/index.html'), 'utf8').includes(JSON.parse(require('fs').readFileSync(require('path').join(__dirname,'../dist/build-manifest.json'),'utf8')).assets['midgame-depth.js']), 'module must be included in the cached document');
   assert(app.includes('window.WTTNDepth'));
-  assert.strictEqual(JSON.parse(text('package.json')).version,'2.10.5');
-  assert(app.includes("const APP_VERSION = '2.10.5'"));
+  assert.strictEqual(JSON.parse(text('package.json')).version,'2.10.6');
+  assert(app.includes("const APP_VERSION = '2.10.6'"));
   assert(sw.includes("const BUILD='__BUILD_ID__'"));
 }
 

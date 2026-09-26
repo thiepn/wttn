@@ -1,4 +1,4 @@
-(function () {
+(async function () {
   'use strict';
   const G = window.WTTNCore;
   const S = window.WTTNSave;
@@ -20,7 +20,7 @@
   const BACKUP_KEY = 'wttn.phase6.backup.v6';
   const LEGACY_SAVE_KEYS = ['wttn.phase5.save.v5','wttn.phase4.save.v4','wttn.phase3.save.v3','wttn.phase2.save.v2','wttn.phase1.save.v1'];
   const SMOKE_MODE = typeof location !== 'undefined' && new URLSearchParams(location.search).has('smoke');
-  const APP_VERSION = '2.10.5';
+  const APP_VERSION = '2.10.6';
   const UI_PREFS_KEY = 'wttn.ui.preferences.v1';
   const $ = id => document.getElementById(id);
   const paint = (element, markup) => window.WTTNView.patch(element, markup);
@@ -112,21 +112,50 @@
     return storageSet(MIGRATION_KEY,text);
   }
 
-  function load() {
-    const primary = storageGet(SAVE_KEY);
-    if (primary) {
-      try { const parsed=parseSaveText(primary); return { ...parsed, source: 'primary', recovered: false, migrationBlocked: !preserveMigration(primary) }; }
-      catch (e) { console.warn('Primary save failed validation', e); }
+  function readCandidate(raw, source, recovered = false) {
+    if (!raw) return null;
+    try {
+      const parsed = parseSaveText(raw);
+      return { ...parsed, raw, source, recovered };
+    } catch (error) {
+      console.warn(`Stored save failed validation (${source})`, error);
+      return null;
     }
-    const backup = storageGet(BACKUP_KEY);
-    if (backup) {
-      try {
-        const parsed = parseSaveText(backup);
-        if (!preserveMigration(backup)) return {...parsed,source:'backup',migrationBlocked:true};
-        parsed.state.records.saveRecoveries = (parsed.state.records.saveRecoveries || 0) + 1;
-        return { ...parsed, source: 'backup', recovered: true };
-      } catch (e) { console.warn('Backup save failed validation', e); }
+  }
+
+  async function load() {
+    const localPrimary = storageGet(SAVE_KEY);
+    const localBackup = storageGet(BACKUP_KEY);
+    let durablePrimary = null, durableBackup = null;
+    try {
+      [durablePrimary, durableBackup] = await Promise.all([
+        window.WTTNSaveStorage.durableGet(SAVE_KEY),
+        window.WTTNSaveStorage.durableGet(BACKUP_KEY)
+      ]);
+    } catch (error) { console.warn('IndexedDB save store is unavailable; using localStorage fallback.', error); }
+
+    const primaries = [
+      readCandidate(durablePrimary, 'indexeddb'),
+      readCandidate(localPrimary, 'primary')
+    ].filter(Boolean).sort((a,b)=>Number(b.savedAt||0)-Number(a.savedAt||0));
+
+    if (primaries.length) {
+      const chosen = primaries[0];
+      return { ...chosen, migrationBlocked: !preserveMigration(chosen.raw) };
     }
+
+    const backups = [
+      readCandidate(durableBackup, 'indexeddb-backup', true),
+      readCandidate(localBackup, 'backup', true)
+    ].filter(Boolean).sort((a,b)=>Number(b.savedAt||0)-Number(a.savedAt||0));
+
+    if (backups.length) {
+      const chosen = backups[0];
+      if (!preserveMigration(chosen.raw)) return {...chosen,migrationBlocked:true};
+      chosen.state.records.saveRecoveries = (chosen.state.records.saveRecoveries || 0) + 1;
+      return chosen;
+    }
+
     for (const key of LEGACY_SAVE_KEYS) {
       const raw = storageGet(key);
       if (!raw) continue;
@@ -137,12 +166,12 @@
         return { ...parsed, source: key, migrated: true, recovered: false };
       } catch (e) { console.warn(`Could not migrate ${key}`, e); }
     }
-    return { state: G.createState(), savedAt: Date.now(), source: primary || backup ? 'unreadable' : 'new', recovered: false };
+    return { state: G.createState(), savedAt: Date.now(), source: localPrimary || localBackup || durablePrimary || durableBackup ? 'unreadable' : 'new', recovered: false };
   }
 
   let importRecoveryBlocked=false;
   try{const restored=window.WTTNFullBackup.recoverPending(localStorage,{save:SAVE_KEY,backup:BACKUP_KEY,preferences:window.WTTNVisualPreferences.KEY});if(restored)window.WTTNVisualPreferences.adoptPlacements(restored);}catch(err){importRecoveryBlocked=true;console.warn('An interrupted full import needs recovery; the recovery copy is retained.',err);}
-  const loaded = load();
+  const loaded = await load();
   let state = loaded.state;
   let saveQuarantined = importRecoveryBlocked || loaded.source === 'unreadable' || !!loaded.migrationBlocked;
   let currentDisclosure = D.getDisclosure(state, G);
@@ -182,6 +211,8 @@
   let storageAvailable = true;
   let warnedAboutStorage = false;
   let healthCache = { at: 0, value: null };
+  let durableStorageActive = String(loaded.source || '').startsWith('indexeddb');
+  let saveChain = Promise.resolve(true);
 
 
   function modalFocusable(modal) {
@@ -353,6 +384,48 @@
     for (const key of LEGACY_SAVE_KEYS) storageRemove(key);
   }
 
+  function finishSaveSuccess(show = false) {
+    storageAvailable = true;
+    warnedAboutStorage = false;
+    state.lastSavedAt = Date.now();
+    healthCache.at = 0;
+    try {
+      setStorageWarning();
+      updateSaveStatus('Saved');
+      if (show) toast('Saved');
+    } catch (error) { console.warn('Save retained; save-status display could not refresh.', error); }
+    return true;
+  }
+
+  function finishSaveFailure(reason, show = false) {
+    storageAvailable = false;
+    if (!warnedAboutStorage) { console.warn('Persistent saving is unavailable; export remains available.'); warnedAboutStorage = true; }
+    updateSaveStatus('Export-only', 'error');
+    setStorageWarning(window.WTTNSaveStorage.message(reason));
+    if (show) toast('Could not save persistently');
+    return false;
+  }
+
+  async function persistDurable(envelope, { backup = true, show = false, localResult = null } = {}) {
+    const durable = await window.WTTNSaveStorage.durableCommit(SAVE_KEY, BACKUP_KEY, envelope, { backup });
+    if (durable.ok) {
+      durableStorageActive = true;
+      pruneObsoleteSaveCopies();
+      if (backup) storageRemove(BACKUP_KEY);
+      window.WTTNSaveStorage.write(() => window.localStorage, SAVE_KEY, envelope);
+      return finishSaveSuccess(show);
+    }
+    if (localResult?.ok) return true;
+    const reason = durable.reason === 'unsupported' ? (localResult?.reason || 'unavailable') : durable.reason;
+    return finishSaveFailure(reason || 'unavailable', show);
+  }
+
+  function queueDurableSave(envelope, options, localResult) {
+    const task = () => persistDurable(envelope, { ...options, localResult });
+    saveChain = saveChain.then(task, task);
+    return saveChain;
+  }
+
   function save(show = false, { backup = true } = {}) {
     if (saveQuarantined) { updateSaveStatus('Recovery needed', 'error'); return false; }
     let envelope;
@@ -375,59 +448,47 @@
       } catch { /* never back up corrupt bytes */ }
     }
 
-    // The current save is the priority write. Writing a duplicate backup first can
-    // consume the final bytes of the origin-wide localStorage quota and make the
-    // real save fail even though replacing it would otherwise fit.
     let result = window.WTTNSaveStorage.write(() => window.localStorage, SAVE_KEY, envelope);
     let reclaimedForPrimary = false;
     if (!result.ok && result.reason === 'quota') {
-      // Obsolete version keys are always redundant once the current in-memory
-      // state has been prepared successfully, so reclaim them before touching a
-      // recovery backup.
       pruneObsoleteSaveCopies();
       result = window.WTTNSaveStorage.write(() => window.localStorage, SAVE_KEY, envelope);
     }
     if (!result.ok && result.reason === 'quota' && previousIsValid) {
-      // A valid current primary makes the separate backup redundant. Remove that
-      // duplicate only as a last app-owned reclaim step, then retry once. If the
-      // primary is invalid (for example after loading from backup), preserve the
-      // recovery copy rather than risking the only known-good stored save.
       storageRemove(BACKUP_KEY);
       reclaimedForPrimary = true;
       result = window.WTTNSaveStorage.write(() => window.localStorage, SAVE_KEY, envelope);
     }
-    if (!result.ok) {
-      storageAvailable = false;
-      if (!warnedAboutStorage) { console.warn('Local saving is unavailable; export remains available.'); warnedAboutStorage = true; }
-      updateSaveStatus('Export-only', 'error');
-      setStorageWarning(window.WTTNSaveStorage.message(result.reason));
-      if (show) toast('Could not save locally');
-      return false;
+
+    if (result.ok) {
+      pruneObsoleteSaveCopies();
+      if (backupCandidate && !reclaimedForPrimary && !window.indexedDB) storageSet(BACKUP_KEY, backupCandidate);
+      finishSaveSuccess(show);
+      if (window.indexedDB) queueDurableSave(envelope, { backup, show: false }, result);
+      return true;
     }
 
-    // Once a current schema save is verified, old version keys are redundant.
-    // Removing them prevents this app from permanently accumulating full-save
-    // duplicates under the shared thiepn.dev localStorage quota.
-    pruneObsoleteSaveCopies();
-    if (backupCandidate && !reclaimedForPrimary) storageSet(BACKUP_KEY, backupCandidate);
+    if (window.indexedDB) {
+      updateSaveStatus('Saving…', 'dirty');
+      queueDurableSave(envelope, { backup, show }, result);
+      return true;
+    }
+    return finishSaveFailure(result.reason, show);
+  }
 
-    // Storage success must not be reclassified as data loss by a UI error.
-    storageAvailable = true;
-    warnedAboutStorage = false;
-    state.lastSavedAt = Date.now();
-    healthCache.at = 0;
-    try {
-      setStorageWarning();
-      updateSaveStatus('Saved');
-      if (show) toast('Saved locally');
-    } catch (error) { console.warn('Save retained; save-status display could not refresh.', error); }
-    return true;
+  async function saveAndWait(show = false, options = {}) {
+    if (!save(show, options)) return false;
+    try { return await saveChain; } catch (error) {
+      console.warn('Queued save failed', error);
+      return false;
+    }
   }
 
   function saveHealthText(force = false) {
     if (!force && healthCache.value && Date.now() - healthCache.at < 2000) return healthCache.value;
     let primary = 'missing', backup = 'missing';
     try { const raw = storageGet(SAVE_KEY); if (raw) { parseSaveText(raw); primary = 'valid'; } } catch { primary = 'invalid'; }
+    if (durableStorageActive) primary = 'valid';
     try { const raw = storageGet(BACKUP_KEY); if (raw) { parseSaveText(raw); backup = 'valid'; } } catch { backup = 'invalid'; }
     healthCache = { at: Date.now(), value: { primary, backup } };
     return healthCache.value;
@@ -2130,7 +2191,7 @@
     renderSystem();
   };
   $('restoreBackupBtn').onclick = async () => {
-    const raw = storageGet(BACKUP_KEY); if (!raw) return;
+    const raw = storageGet(BACKUP_KEY) || await window.WTTNSaveStorage.durableGet(BACKUP_KEY); if (!raw) return;
     try {
       const parsed = parseSaveText(raw);
       if (!await ask('Restore the recovery backup? Your current primary save will be replaced.', 'Restore recovery snapshot?')) return;
@@ -2166,18 +2227,18 @@
   window.addEventListener('online', () => updateInstallUi());
   window.addEventListener('offline', () => updateInstallUi());
   const hadControllerAtBoot = !!navigator.serviceWorker?.controller;
-  navigator.serviceWorker?.addEventListener('controllerchange', () => {
+  navigator.serviceWorker?.addEventListener('controllerchange', async () => {
     if (!hadControllerAtBoot) { updateInstallUi(); return; }
     if (reloadingForUpdate) return;
-    if (!save(false)) { updateInstallUi('Update ready; export your progress before reloading.'); return; }
+    if (!await saveAndWait(false)) { updateInstallUi('Update active; export your progress before reloading.'); return; }
     reloadingForUpdate = true;
     location.reload();
   });
   $('installAppBtn').onclick = requestInstall;
   $('installTopBtn').onclick = requestInstall;
-  $('updateAppBtn').onclick = () => {
+  $('updateAppBtn').onclick = async () => {
     if (!swRegistration?.waiting) return;
-    if (!save(true)) { updateInstallUi('Export your save before updating; local saving is unavailable.'); return; }
+    if (!await saveAndWait(true)) { updateInstallUi('Export your save before updating; persistent saving is unavailable.'); return; }
     swRegistration.waiting.postMessage({ type: 'SKIP_WAITING' });
     updateInstallUi('Applying update…');
   };
