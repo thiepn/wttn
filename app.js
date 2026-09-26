@@ -365,9 +365,14 @@
     }
 
     const previous = storageGet(SAVE_KEY);
+    let previousIsValid = false;
     let backupCandidate = null;
-    if (backup && previous) {
-      try { parseSaveText(previous); backupCandidate = previous; } catch { /* never back up corrupt bytes */ }
+    if (previous) {
+      try {
+        parseSaveText(previous);
+        previousIsValid = true;
+        if (backup) backupCandidate = previous;
+      } catch { /* never back up corrupt bytes */ }
     }
 
     // The current save is the priority write. Writing a duplicate backup first can
@@ -376,10 +381,18 @@
     let result = window.WTTNSaveStorage.write(() => window.localStorage, SAVE_KEY, envelope);
     let reclaimedForPrimary = false;
     if (!result.ok && result.reason === 'quota') {
-      // Only reclaim redundant WTTN copies. Never touch another app's keys and
-      // never remove the current primary before a verified replacement exists.
-      storageRemove(BACKUP_KEY);
+      // Obsolete version keys are always redundant once the current in-memory
+      // state has been prepared successfully, so reclaim them before touching a
+      // recovery backup.
       pruneObsoleteSaveCopies();
+      result = window.WTTNSaveStorage.write(() => window.localStorage, SAVE_KEY, envelope);
+    }
+    if (!result.ok && result.reason === 'quota' && previousIsValid) {
+      // A valid current primary makes the separate backup redundant. Remove that
+      // duplicate only as a last app-owned reclaim step, then retry once. If the
+      // primary is invalid (for example after loading from backup), preserve the
+      // recovery copy rather than risking the only known-good stored save.
+      storageRemove(BACKUP_KEY);
       reclaimedForPrimary = true;
       result = window.WTTNSaveStorage.write(() => window.localStorage, SAVE_KEY, envelope);
     }
