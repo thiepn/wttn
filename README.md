@@ -1,4 +1,6 @@
-# Word to the Nations — v2.10.3
+# Word to the Nations — v2.10.4
+
+Latest patch: keyboard navigation, shared purchase quantities, order editing, reference search, short-screen controls and verified backup recovery. See [audit fixes and verification](AUDIT-FIXES-v2.10.4.md).
 
 [Play Word to the Nations](https://thiepn.dev/wttn/) · [Deployment status](https://github.com/thiepn/wttn/actions/workflows/pages.yml)
 

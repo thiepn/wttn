@@ -13,5 +13,12 @@ self.addEventListener('fetch',event=>{
  const request=event.request,url=new URL(request.url);if(request.method!=='GET'||url.origin!==self.location.origin||!url.href.startsWith(self.registration.scope))return;
  if(request.mode==='navigate'){event.respondWith(caches.open(CORE).then(async c=>(await c.match(absolute('./index.html')))||fetch(request)));return;}
  if(coreURLs.has(url.href)){event.respondWith(caches.open(CORE).then(async c=>(await c.match(request))||fetch(request)));return;}
- if(artURLs.has(url.href))event.respondWith(caches.open(ART).then(async cache=>{const stored=await cache.match(request);if(stored)return stored;const response=await fetch(request);if(response.ok){await cache.put(request,response.clone());const keys=await cache.keys();for(const k of keys.slice(0,Math.max(0,keys.length-48)))await cache.delete(k);}return response;}));
+ if(artURLs.has(url.href))event.respondWith((async()=>{
+  // Optional cache failures must never turn a successful artwork download into
+  // a failed request (for example when the browser's storage quota is full).
+  let cache;try{cache=await caches.open(ART);const stored=await cache.match(request);if(stored)return stored;}catch(_){}
+  const response=await fetch(request);
+  if(response.ok&&cache)try{await cache.put(request,response.clone());const keys=await cache.keys();for(const k of keys.slice(0,Math.max(0,keys.length-48)))await cache.delete(k);}catch(_){}
+  return response;
+ })());
 });

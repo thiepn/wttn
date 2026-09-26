@@ -2,13 +2,15 @@
 
 const G=window.WTTNCore,V=window.WTTNSettlementModel,W=window.WTTNWorkshopModel,patch=window.WTTNView.patch,$=id=>document.getElementById(id),esc=v=>String(v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 
-let api,scene,model,selected='scribe',amount='1',detail='',activePanel='',focusOrigin=null,lastDetailKey='',decorSelected='pergola',decorSlot='home';
+let api,scene,model,selected='scribe',detail='',activePanel='',focusOrigin=null,lastDetailKey='',decorSelected='pergola',decorSlot='home';
 
 const L=window.WTTNLanguage,P=window.WTTNVisualPreferences;
 
 const decorNames={pergola:'Vine pergola',fountain:'Courtyard fountain',lemon:'Lemon tree',garden:'Wildflower garden',amphorae:'Painted amphorae',cypress:'Cypress planters',market:'Book canopy',mosaic:'Mosaic terrace',birdbath:'Birdbath',readingBench:'Reading bench',flowers:'Flower pots',handcart:'Manuscript cart'};
 
 const money=n=>api.format(n),changed=()=>{api.render();api.save();};
+function focusVisible(preferred){const target=preferred?.isConnected&&preferred.getClientRects().length&&!preferred.disabled?preferred:$('buildingListButton');target?.focus({preventScroll:true});}
+function closeDetail(){const prior=detail;detail='';$('selectionTray').dataset.sheet='expanded';update(api.getState());scene.frameSelection();focusVisible(prior==='decorations'?$('decorationButton'):document.querySelector('[data-tray-detail="'+prior+'"]'));}
 
 function choose(id,focus=false){if(!V.sites.some(s=>s.id===id))return;selected=id;close();scene.select(id);update(api.getState());if(focus)$('hireWorker').focus({preventScroll:true});}
 
@@ -20,7 +22,7 @@ function screen(id){if(!api)return;if(id==='work'&&!activePanel)return;if(active
 
 function dispatch(type,id,value){const s=api.getState();let ok=false;
 
- if(type==='hire'){s.settlement.onboarding.welcome=true;const result=G.buyProducer(s,selected,amount==='max'?'max':Number(amount));ok=result.bought>0;if(ok)api.toast(`${L.units(selected,result.bought)} added · ${money(G.pageProduction(s))} Pages/sec total`);}
+ if(type==='hire'){const amount=api.getBuyAmount();s.settlement.onboarding.welcome=true;const result=G.buyProducer(s,selected,amount==='max'?'max':Number(amount));ok=result.bought>0;if(ok)api.toast(`${L.units(selected,result.bought)} added · ${money(G.pageProduction(s))} Pages/sec total`);}
 
  if(type==='method')ok=G.buyPageUpgrade(s,id);
 
@@ -46,7 +48,7 @@ function extra(s){
 
  if(detail==='reference')return window.WTTNSecondaryScreens.reference(s,money);
 
- if(detail==='approaches')return `<h3>How will you work?</h3><p>First choice starts now. Later choices begin next Translation.</p><div class="approach-options">${G.SPECIALIZATIONS.map(a=>`<article><h4>${a.name}</h4><p>${esc(a.description)}</p><p class="muted">${{scholar:'For longer runs: develops after 10 minutes.',publisher:'For frequent returns: affordable expansion.',teacher:'For milestone and commission pursuit.'}[a.id]}</p><button data-world-approach="${a.id}" ${!G.specializationUnlocked(s)||s.specialization===a.id?'disabled':''}>${s.specialization===a.id?'Current approach':s.queuedSpecialization===a.id?'Queued for Translation':s.specialization?'Use '+a.name+' next Translation':'Choose '+a.name}</button></article>`).join('')}</div>${G.specializationUnlocked(s)?'':'<p>Purchase Organized Desk to choose.</p>'}`;
+ if(detail==='approaches')return `<h3>How will you work?</h3><p>First choice starts now. Later choices begin next Translation.</p><div class="approach-options">${G.SPECIALIZATIONS.map(a=>`<article><h4>${a.name}</h4><p>${esc(a.description)}</p><p class="muted">${{scholar:'For longer runs: develops after 10 minutes.',publisher:'For frequent returns: affordable expansion.',teacher:'For milestone and commission pursuit.'}[a.id]}</p><button data-world-approach="${a.id}" ${!G.specializationUnlocked(s)||(s.specialization===a.id&&(!s.queuedSpecialization||s.queuedSpecialization===a.id))||s.queuedSpecialization===a.id?'disabled':''}>${s.specialization===a.id?(s.queuedSpecialization&&s.queuedSpecialization!==a.id?'Keep '+a.name+' next Translation':'Current approach'):s.queuedSpecialization===a.id?'Queued for Translation':s.specialization?'Use '+a.name+' next Translation':'Choose '+a.name}</button></article>`).join('')}</div>${G.specializationUnlocked(s)?'':'<p>Purchase Organized Desk to choose.</p>'}`;
 
  if(detail==='plans')return `<h3>While you are away</h3><p>${esc(G.purchaseQueueStatus(s))}</p><ol class="planned-list">${s.purchaseQueue.orders.map((o,i)=>`<li><span>${o.type==='producer'?`Reach ${L.units(o.id,o.target)}`:G.PAGE_UPGRADES.find(p=>p.id===o.id).name}</span>${o.type==='producer'?`<input type="number" class="order-target" min="1" max="100000" step="1" data-world-target="${i}" value="${o.target}" aria-label="Target workforce for order ${i+1}"><button data-world-target-save="${i}" aria-label="Update target for order ${i+1}">Update</button>`:''}<button data-world-plan="${i}:up" aria-label="Move order ${i+1} up" ${i===0?'disabled':''}>Up</button><button data-world-plan="${i}:down" aria-label="Move order ${i+1} down" ${i===s.purchaseQueue.orders.length-1?'disabled':''}>Down</button><button data-world-plan="${i}:remove" aria-label="Cancel order ${i+1}">Cancel</button></li>`).join('')}</ol><form id="settlementPlan"><label>Target total · ${V.sites.find(p=>p.id===selected).name}<input id="settlementTarget" type="number" min="1" max="100000" step="1" value="${Math.max(10,s.producers[selected]+10)}" required></label><button ${!G.queueUnlocked(s)||s.purchaseQueue.orders.length>=6?'disabled':''}>Add order (${s.purchaseQueue.orders.length}/6)</button><button type="button" data-world-plan="0:pause" ${!G.queueUnlocked(s)?'disabled':''}>${s.purchaseQueue.paused?'Resume':'Pause'} plan</button></form><div class="plan-outcome"><strong>Expected outcome if funded</strong><p>${s.purchaseQueue.orders.length?s.purchaseQueue.orders.map(o=>o.type==='producer'?L.units(o.id,Math.max(s.producers[o.id],o.target)):G.PAGE_UPGRADES.find(m=>m.id===o.id).name+' equipped').join(' · '):'Choose the workforce or equipment you want ready on your return.'}</p></div><small>Orders spend Pages in sequence every ten seconds, online and offline. Completion time depends on changing production, prices and other automation. Plans never reset or enter Fields.</small>`;
 
@@ -61,7 +63,7 @@ function update(s){if(!api)return;const next=V.derive(s),events=V.events(model,n
 
  for(const e of events){if(e.type==='finale')$('campaignCelebration').showModal();if(e.type==='departure'||e.type==='return'){document.body.classList.add('departing');setTimeout(()=>document.body.classList.remove('departing'),1200);api.toast(e.type==='return'?'Field experience returns home. Your settlement remembers the work.':'Your work travels onward. Discovered buildings remain; the workforce rebuilds.');}if(e.type==='commission'&&!s.settlement.onboarding.commission){s.settlement.onboarding.commission=true;$('celebrationDialog').showModal();}}
 
- const site=next.sites.find(x=>x.id===selected),def=G.PRODUCERS.find(p=>p.id===selected),preview=W.purchase(s,def,amount);
+ const amount=api.getBuyAmount(),site=next.sites.find(x=>x.id===selected),def=G.PRODUCERS.find(p=>p.id===selected),preview=W.purchase(s,def,amount);
 
  for(const b of document.querySelectorAll('[data-site]')){const v=next.sites.find(x=>x.id===b.dataset.site);b.textContent=v.name;b.dataset.stage=v.stage;b.setAttribute('aria-pressed',String(v.id===selected));b.setAttribute('aria-label',`${v.name}. ${L.units(v.id,v.owned)}. ${v.discovered&&!v.operating?'Discovered, currently inactive.':v.available?'Select building':'Future building site'}`);}
 
@@ -117,15 +119,15 @@ function init(bridge){api=bridge;document.body.dataset.surface='settlement';scen
 
  $('sheetToggle').onclick=()=>{const el=$('selectionTray'),expand=el.dataset.sheet==='compact';detail='';el.dataset.sheet=expand?'expanded':'compact';$('sheetToggle').setAttribute('aria-expanded',String(expand));$('sheetToggle').setAttribute('aria-label',expand?'Collapse building sheet':'Expand building sheet');update(api.getState());scene.select(selected);};
 
- document.querySelectorAll('[data-visual]').forEach(el=>{el.value=P.get()[el.dataset.visual];el.onchange=()=>{P.set(el.dataset.visual,el.value);update(api.getState());};});
+ document.querySelectorAll('[data-visual]').forEach(el=>{el.value=P.get()[el.dataset.visual];el.onchange=()=>{if(!P.set(el.dataset.visual,el.value)){el.value=P.get()[el.dataset.visual];api.toast('Could not save this visual preference.');}update(api.getState());};});
 
  document.querySelectorAll('[data-route]').forEach(b=>b.onclick=()=>open(b.dataset.route));
 
- $('hireWorker').onclick=()=>dispatch('hire');document.querySelectorAll('[data-world-quantity]').forEach(b=>b.onclick=()=>{amount=b.dataset.worldQuantity;update(api.getState());});
+ $('hireWorker').onclick=()=>dispatch('hire');document.querySelectorAll('[data-world-quantity]').forEach(b=>b.onclick=()=>{api.setBuyAmount(b.dataset.worldQuantity);});
 
- document.querySelectorAll('[data-tray-detail]').forEach(b=>b.onclick=()=>{detail=detail===b.dataset.trayDetail?'':b.dataset.trayDetail;update(api.getState());scene.select(selected);});
+ document.querySelectorAll('[data-tray-detail]').forEach(b=>b.onclick=()=>{detail=detail===b.dataset.trayDetail?'':b.dataset.trayDetail;update(api.getState());scene.select(selected);if(detail)$('trayExtra').focus({preventScroll:true});});
 
- $('closeTrayExtra').onclick=()=>{const prior=detail;detail='';$('selectionTray').dataset.sheet='expanded';update(api.getState());scene.frameSelection();document.querySelector('[data-tray-detail="'+prior+'"]')?.focus();};
+ $('closeTrayExtra').onclick=closeDetail;
 
  $('chapterAction').onclick=()=>{const c=model.chapter;if(c.building)choose(c.building);if(c.screen)open(c.screen);else if(c.detail){detail=c.detail;update(api.getState());}};
 
@@ -133,11 +135,11 @@ function init(bridge){api=bridge;document.body.dataset.surface='settlement';scen
 
  document.querySelectorAll('[data-open-screen]').forEach(b=>b.onclick=()=>open(b.dataset.openScreen));
 
- $('closeScreen').onclick=()=>{close();focusOrigin?.focus();};$('buildingListButton').onclick=()=>$('buildingDialog').showModal();$('zoomWorldIn').onclick=()=>scene.zoom(.15);$('zoomWorldOut').onclick=()=>scene.zoom(-.15);$('fitWorld').onclick=()=>scene.fit();
+ $('closeScreen').onclick=()=>{close();focusVisible(focusOrigin);};$('buildingListButton').onclick=()=>$('buildingDialog').showModal();$('zoomWorldIn').onclick=()=>scene.zoom(.15);$('zoomWorldOut').onclick=()=>scene.zoom(-.15);$('fitWorld').onclick=()=>scene.fit();
 
- $('decorationButton').onclick=()=>{close();detail=detail==='decorations'?'':'decorations';update(api.getState());};
+ $('decorationButton').onclick=()=>{close();detail=detail==='decorations'?'':'decorations';update(api.getState());if(detail)$('trayExtra').focus({preventScroll:true});};
 
- document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!document.querySelector('dialog[open],.modal-backdrop:not(.hidden)')){if(detail){detail='';update(api.getState());}else close();}});
+ document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!document.querySelector('dialog[open],.modal-backdrop:not(.hidden)')){if(detail)closeDetail();else if(activePanel){close();focusVisible(focusOrigin);}}});
 
  $('settlementCanvas').addEventListener('keydown',e=>{const index=V.sites.findIndex(s=>s.id===selected);if(['ArrowRight','ArrowLeft'].includes(e.key)){e.preventDefault();choose(V.sites[(index+(e.key==='ArrowRight'?1:5))%6].id);}if(e.key==='Enter'){e.preventDefault();$('hireWorker').focus();}});
 

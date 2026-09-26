@@ -30,6 +30,7 @@ jobs:
           node tests/economic-v210.test.js
           node tests/save-storage.test.js
           node tests/ui-repair.test.js
+          node tests/audit-repairs.test.js
           node tests/delivery.test.js
       - name: Upload site artifact
         uses: actions/upload-pages-artifact@v4

@@ -98,6 +98,6 @@ assert(require('fs').readFileSync(require('path').join(__dirname,'../dist/web/in
 assert(text('index.html').includes('<script src="disclosure.js"></script>'), 'disclosure.js missing from page');
 
 // 10. Economy/save files remain untouched by Phase 1; only UI/IA is allowed to change.
-assert.strictEqual(JSON.parse(text('package.json')).version, '2.10.3');
+assert.strictEqual(JSON.parse(text('package.json')).version, '2.10.4');
 
 console.log('Pristine Phase 1 progressive disclosure: PASS · fresh 5-tab surface · staged resource reveals · future layers inaccessible until relevant');

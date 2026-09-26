@@ -439,8 +439,16 @@ button[aria-disabled=true]:hover{box-shadow:none;border-color:#b6a379}
 @media(min-width:1051px){body.world-overview .selection-tray{display:none}}
 @media(max-width:700px){.codex-toolbar{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.codex-toolbar label:nth-child(-n+2){grid-column:1/-1}.codex-toolbar button{min-height:44px}}
 
+/* Short phones need a single row of world controls above the expanded sheet. */
+@media(max-width:599px) and (max-height:700px){
+ .chapter-ribbon p{display:none}
+ .world-tools,.camera-controls{top:160px;flex-direction:row;gap:3px}
+ .world-tools{right:10px}
+ .camera-controls{left:10px}
+}
+
 @media(min-width:600px) and (max-width:1050px) and (max-height:600px){
- .chapter-ribbon{display:none}.world-tools{top:90px;right:auto;left:10px;flex-direction:row}.camera-controls{top:auto;bottom:20px;left:10px;flex-direction:row}
+ .chapter-ribbon{display:none}.world-tools{top:90px;right:auto;left:10px;flex-direction:row}.camera-controls{top:140px;bottom:auto;left:10px;flex-direction:row}
  .selection-tray{top:90px;bottom:auto;left:auto;right:8px;width:310px;max-height:calc(100dvh - 170px);padding:8px}
  .selection-tray[data-sheet=detail]{height:calc(100dvh - 170px)}
  .selection-tray[data-detail=decorations]{height:calc(100dvh - 170px);min-height:0}

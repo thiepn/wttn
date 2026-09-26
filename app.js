@@ -20,7 +20,7 @@
   const BACKUP_KEY = 'wttn.phase6.backup.v6';
   const LEGACY_SAVE_KEYS = ['wttn.phase5.save.v5','wttn.phase4.save.v4','wttn.phase3.save.v3','wttn.phase2.save.v2','wttn.phase1.save.v1'];
   const SMOKE_MODE = typeof location !== 'undefined' && new URLSearchParams(location.search).has('smoke');
-  const APP_VERSION = '2.10.3';
+  const APP_VERSION = '2.10.4';
   const UI_PREFS_KEY = 'wttn.ui.preferences.v1';
   const $ = id => document.getElementById(id);
   const paint = (element, markup) => window.WTTNView.patch(element, markup);
@@ -1802,7 +1802,7 @@
     btn.addEventListener('keydown', e => {
       if (!['ArrowLeft','ArrowRight','ArrowUp','ArrowDown','Home','End'].includes(e.key)) return;
       e.preventDefault();
-      const visible = tabs.filter(tab => D.isTabVisible(currentDisclosure, tab.dataset.tab));
+      const visible = tabs.filter(tab => D.isTabVisible(currentDisclosure, tab.dataset.tab) && tab.getClientRects().length);
       if (!visible.length) return;
       const current = Math.max(0, visible.indexOf(btn));
       let next = current;
@@ -1908,6 +1908,7 @@
   async function importSaveText(text) {
     const feedback = $('importFeedback');
     try {
+      if (storageGet(window.WTTNFullBackup.JOURNAL_KEY)) throw new Error('Reopen the game to finish interrupted import recovery before importing another save.');
       if (new Blob([text]).size > MAX_IMPORT_BYTES) throw new Error('Save is larger than the 2 MB limit.');
       const parsed = window.WTTNFullBackup.parse(text);
       if (!preserveMigration(parsed.economic)) throw new Error('Could not preserve the pre-migration save. Export a backup and free local storage before importing.');
@@ -1926,7 +1927,14 @@
       masteryShown = !!state.phase2Complete; phase3Shown = !!state.phase3Complete; phase4Shown = !!state.phase4Complete; phase5Shown = !!state.phase5Complete;
       $('importDialog').close(); $('importText').value = ''; lastAtlasSignature = '';
       render(); toast(parsed.full?'Full backup imported · progress and arrangement':'Save imported and validated'); return true;
-    } catch (err) { feedback.textContent = `Import not applied. ${err.message || 'This is not a valid save.'}`; return false; }
+    } catch (err) {
+      if (storageGet(window.WTTNFullBackup.JOURNAL_KEY)) {
+        saveQuarantined = true;
+        updateSaveStatus('Recovery needed', 'error');
+        setStorageWarning('An interrupted full import still needs recovery. Autosaving is paused. Export your current progress, then reopen the game after browser storage is available.');
+      }
+      feedback.textContent = `Import not applied. ${err.message || 'This is not a valid save.'}`; return false;
+    }
   }
   $('importFile').onchange = async event => {
     const file = event.target.files?.[0]; if (!file) return;
@@ -1936,6 +1944,7 @@
   };
   $('importTextBtn').onclick = async () => { $('importTextBtn').disabled = true; try { await importSaveText($('importText').value); } finally { $('importTextBtn').disabled = false; } };
   $('resetBtn').onclick = async () => {
+    if (storageGet(window.WTTNFullBackup.JOURNAL_KEY)) { toast('Finish interrupted import recovery before resetting. Export your progress, then reopen the game.'); return; }
     if (!await ask('Reset the entire campaign? Export a copy first. This clears all campaign progress in this browser.', 'Reset this campaign?')) return;
     saveQuarantined = false; state = G.createState(); M?.seed?.(state, G); Q?.seed?.(state, G); window.WTTNSettlement?.seed(); currentDisclosure = D.getDisclosure(state, G);
     masteryShown = false; phase3Shown = false; phase4Shown = false; phase5Shown = false; lastAtlasSignature = '';
@@ -2152,7 +2161,7 @@
     if (e.altKey && /^[0-9]$/.test(e.key)) {
       const visible = tabs.filter(tab => D.isTabVisible(currentDisclosure, tab.dataset.tab));
       const digit = Number(e.key); const index = digit === 0 ? 9 : digit - 1;
-      if (visible[index]) { e.preventDefault(); switchTab(visible[index].dataset.tab); visible[index].focus(); }
+      if (visible[index]) { e.preventDefault(); switchTab(visible[index].dataset.tab); (visible[index].getClientRects().length ? visible[index] : $('panelHeading')).focus({preventScroll:true}); }
       return;
     }
     if (!e.ctrlKey && !e.metaKey && !e.altKey && e.key.toLowerCase() === 'b') {
@@ -2200,7 +2209,7 @@
 
   window.WTTNSecondaryScreens.init();
   window.WTTNSettlement.init({
-    getState: () => state, render, save: () => save(false), open: switchTab, toast,
+    getState: () => state, getBuyAmount: () => buyAmount, setBuyAmount: value => { buyAmount = value; render(); }, render, save: () => save(false), open: switchTab, toast,
     sound: type => Q?.play?.(type), modal: openModal,
     reduced: prefersReducedMotion, format: readableAmount
   });
@@ -2210,7 +2219,7 @@
   overview.open = overviewPreference == null ? false : overviewPreference === 'true';
   overview.addEventListener('toggle', () => storageSet('wttn.overview.open.v1', String(overview.open)));
   document.body.dataset.activeTab = 'work';
-  const setNavigationOrientation = () => $('gameTabs').setAttribute('aria-orientation', isNarrowViewport() ? 'horizontal' : 'vertical');
+  const setNavigationOrientation = () => $('gameTabs').setAttribute('aria-orientation', 'horizontal');
   setNavigationOrientation(); window.addEventListener('resize', setNavigationOrientation, {passive:true});
   installPlatformListeners();
   wireAtlasInteraction();

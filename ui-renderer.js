@@ -18,6 +18,7 @@
       return;
     }
     const interactiveOpen = current.tagName === 'DETAILS';
+    const previousValue = current.getAttribute('value');
     for (const attr of [...current.attributes]) {
       if (interactiveOpen && attr.name === 'open') continue;
       if (!next.hasAttribute(attr.name)) current.removeAttribute(attr.name);
@@ -25,6 +26,12 @@
     for (const attr of [...next.attributes]) {
       if (interactiveOpen && attr.name === 'open') continue;
       if (current.getAttribute(attr.name) !== attr.value) current.setAttribute(attr.name, attr.value);
+    }
+    // Once an input has been edited, changing its value attribute no longer
+    // changes the displayed value. Reconcile model changes after editing ends.
+    if (current.tagName === 'INPUT' && next.hasAttribute('value') &&
+        previousValue !== next.getAttribute('value') && current.ownerDocument.activeElement !== current) {
+      current.value = next.getAttribute('value');
     }
     syncChildren(current, next);
   }

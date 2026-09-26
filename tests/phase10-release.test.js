@@ -14,7 +14,7 @@ const sha256 = p => crypto.createHash('sha256').update(read(p)).digest('hex');
 // v1.0.1 intentionally changes game-core/save-format sanitization only; full progression tests pin economy behavior.
 
 const pkg = JSON.parse(text('package.json'));
-assert.strictEqual(pkg.version, '2.10.3');
+assert.strictEqual(pkg.version, '2.10.4');
 
 const manifest = JSON.parse(text('manifest.webmanifest'));
 assert.strictEqual(manifest.name, 'Word to the Nations');
@@ -49,7 +49,7 @@ for (const required of [
 ]) assert(html.includes(required), `index missing ${required}`);
 
 const app = text('app.js');
-assert(app.includes("const APP_VERSION = '2.10.3'"));
+assert(app.includes("const APP_VERSION = '2.10.4'"));
 assert(app.includes("navigator.serviceWorker.register('./sw.js'"));
 assert(app.includes("window.addEventListener('beforeinstallprompt'"));
 assert(app.includes("swRegistration.waiting.postMessage({ type: 'SKIP_WAITING' })"));
@@ -74,4 +74,4 @@ assert(exists('.nojekyll'), '.nojekyll missing');
 assert(!exists('game-core.phase9-variant.js'), 'temporary Phase 9 variant leaked into release');
 assert(!fs.readdirSync(ROOT).some(name => /phase9.*(?:tmp|variant)/i.test(name)), 'temporary Phase 9 balance artifact leaked into release root');
 
-console.log('Phase 10/PWA release contract: PASS · v2.10.3 · bundled PWA source contract and gameplay checks');
+console.log('Phase 10/PWA release contract: PASS · v2.10.4 · bundled PWA source contract and gameplay checks');
