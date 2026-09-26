@@ -3,14 +3,14 @@ const assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('nod
 const Storage=require('../save-storage'),G=require('../game-core'),S=require('../save-format');
 const app=fs.readFileSync(require('node:path').join(__dirname,'../app.js'),'utf8');
 const html=fs.readFileSync(require('node:path').join(__dirname,'../index.html'),'utf8');
-const KEY='wttn.phase6.save.v6',BACKUP='wttn.phase6.backup.v6';let passed=0;
+const KEY='wttn.phase6.save.v6',BACKUP='wttn.phase6.backup.v6',LEGACY=['wttn.phase5.save.v5','wttn.phase4.save.v4','wttn.phase3.save.v3','wttn.phase2.save.v2','wttn.phase1.save.v1'];let passed=0;
 function test(name,fn){fn();passed++;console.log('PASS '+name);}
 function store(){const data=new Map();return {data,getItem:k=>data.get(k)??null,setItem:(k,v)=>data.set(k,v),removeItem:k=>data.delete(k)};}
 function setup(storage=store()){
  const nodes=new Map();
  function node(id){if(!nodes.has(id)){const classes=new Set();nodes.set(id,{textContent:'',hidden:true,classList:{toggle(k,on){if(on)classes.add(k);else classes.delete(k);},contains:k=>classes.has(k)}});}return nodes.get(id);}
  const state=G.createState();state.producers.scribe=7;state.pages=G.bn(123456);
- const context={window:{localStorage:storage,WTTNSaveStorage:Storage},$:node,state,SAVE_KEY:KEY,BACKUP_KEY:BACKUP,makeEnvelope:S.makeEnvelope,parseSaveText:S.parseSaveText,saveQuarantined:false,storageAvailable:true,warnedAboutStorage:false,healthCache:{at:55},Date,console:{warn(){}},toast(){}};
+ const context={window:{localStorage:storage,WTTNSaveStorage:Storage},$:node,state,SAVE_KEY:KEY,BACKUP_KEY:BACKUP,LEGACY_SAVE_KEYS:LEGACY,makeEnvelope:S.makeEnvelope,parseSaveText:S.parseSaveText,saveQuarantined:false,storageAvailable:true,warnedAboutStorage:false,healthCache:{at:55},Date,console:{warn(){}},toast(){}};
  vm.createContext(context);
  vm.runInContext(app.slice(app.indexOf('  function storageGet('),app.indexOf('  function loadUiPreferences('))+app.slice(app.indexOf('  function updateSaveStatus('),app.indexOf('  function saveHealthText(')),context);
  return {context,node,storage,save:show=>vm.runInContext(`save(${!!show})`,context)};
