@@ -411,7 +411,7 @@
     if (durable.ok) {
       durableStorageActive = true;
       pruneObsoleteSaveCopies();
-      storageRemove(BACKUP_KEY);
+      if (backup) storageRemove(BACKUP_KEY);
       window.WTTNSaveStorage.write(() => window.localStorage, SAVE_KEY, envelope);
       return finishSaveSuccess(show);
     }
