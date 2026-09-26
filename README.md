@@ -1,10 +1,10 @@
-# Word to the Nations — v2.10.5
+# Word to the Nations — v2.10.6
 
-Latest patch: quota-safe local saving. WTTN now prioritizes the verified primary save, reclaims only redundant WTTN save copies when quota is tight, and never deletes unrelated site data. See [save fix notes](SAVE-FIX.md).
+Latest patch: IndexedDB-backed durable saving. WTTN no longer depends on the small shared localStorage quota; localStorage is only a compatibility mirror. See [save fix notes](SAVE-FIX.md).
 
 [Play Word to the Nations](https://thiepn.dev/wttn/) · [Deployment status](https://github.com/thiepn/wttn/actions/workflows/pages.yml)
 
-v2.10.5 fixes avoidable quota failures caused by writing a full recovery backup before the primary save. The primary is now verified first; on a quota error, obsolete WTTN save copies are reclaimed conservatively and the write is retried without touching other applications' local data.
+v2.10.6 moves the authoritative browser save to IndexedDB, keeps localStorage as a best-effort compatibility mirror, loads whichever valid copy is newest, and force-activates this recovery release so a broken localStorage save cannot block the update itself.
 
 v2.10.3 removes an obsolete, higher-specificity save-warning rule that combined with the new layout to create a clipped brown column. The warning now has one layout definition, stays inside desktop and phone viewports, and keeps Export and Retry accessible. Storage-failure and save-integrity behavior is unchanged.
 
