@@ -1,5 +1,19 @@
-(function () {
+(async function () {
   'use strict';
+  let tabGuardSupported = false;
+  if (!new URLSearchParams(location.search).has('smoke')) {
+    let waitingNotice;
+    try {
+      const guard = await window.WTTNTabGuard.acquire(navigator.locks, () => {
+        for (const child of document.body.children) child.inert = true;
+        waitingNotice = document.createElement('aside'); waitingNotice.className = 'game-tab-wait'; waitingNotice.setAttribute('role','status');
+        waitingNotice.innerHTML = '<h2>Your settlement is open in another tab.</h2><p>Close that tab to continue here. This prevents two tabs from replacing each other’s progress. This tab will continue automatically.</p>';
+        document.body.append(waitingNotice);
+      });
+      tabGuardSupported = guard.supported;
+    } catch (_) { /* Guest play remains available if browser locking is unavailable. */ }
+    if (waitingNotice) { waitingNotice.remove(); for (const child of document.body.children) child.inert = false; }
+  }
   const G = window.WTTNCore;
   const S = window.WTTNSave;
   const C = window.WTTNContent || {};
@@ -20,7 +34,7 @@
   const BACKUP_KEY = 'wttn.phase6.backup.v6';
   const LEGACY_SAVE_KEYS = ['wttn.phase5.save.v5','wttn.phase4.save.v4','wttn.phase3.save.v3','wttn.phase2.save.v2','wttn.phase1.save.v1'];
   const SMOKE_MODE = typeof location !== 'undefined' && new URLSearchParams(location.search).has('smoke');
-  const APP_VERSION = '2.10.4';
+  const APP_VERSION = '2.11.0';
   const UI_PREFS_KEY = 'wttn.ui.preferences.v1';
   const $ = id => document.getElementById(id);
   const paint = (element, markup) => window.WTTNView.patch(element, markup);
@@ -36,6 +50,8 @@
   let atlasPointerDrag = null;
   let rafId = null;
   let uiPrefs = loadUiPreferences();
+  let accountPanel = null;
+  let accountMilestone = '';
 
   function readableAmount(value, digits = 2) {
     if (!value || value.isZero) return '0';
@@ -142,6 +158,21 @@
 
   let importRecoveryBlocked=false;
   try{const restored=window.WTTNFullBackup.recoverPending(localStorage,{save:SAVE_KEY,backup:BACKUP_KEY,preferences:window.WTTNVisualPreferences.KEY});if(restored)window.WTTNVisualPreferences.adoptPlacements(restored);}catch(err){importRecoveryBlocked=true;console.warn('An interrupted full import needs recovery; the recovery copy is retained.',err);}
+  try {
+    window.WTTNCloudSync.recoverSwitch(localStorage, text => {
+      const parsed = window.WTTNFullBackup.parse(text);
+      if (!parsed.full || !storageSet(SAVE_KEY, parsed.economic) || !window.WTTNVisualPreferences.set('placements', parsed.placements)) throw new Error('Account-switch recovery needs local storage.');
+    });
+  } catch (_) { importRecoveryBlocked = true; }
+  // Old editions only know the legacy primary key. Never attribute their writes
+  // to a signed-in account: its own verified slot is the startup authority.
+  try {
+    const owned = window.WTTNCloudSync.ownedSnapshot(localStorage);
+    if (owned && !importRecoveryBlocked) {
+      const parsed = window.WTTNFullBackup.parse(owned);
+      if (!parsed.full || !storageSet(SAVE_KEY, parsed.economic) || !window.WTTNVisualPreferences.set('placements', parsed.placements)) throw new Error('Account save recovery needs local storage.');
+    }
+  } catch (_) { importRecoveryBlocked = true; }
   const loaded = load();
   let state = loaded.state;
   let saveQuarantined = importRecoveryBlocked || loaded.source === 'unreadable' || !!loaded.migrationBlocked;
@@ -350,6 +381,7 @@
   }
 
   function save(show = false, { backup = true } = {}) {
+    if (accountPanel && !accountPanel.canSave()) { updateSaveStatus('Account changed · reload', 'error'); return false; }
     if (saveQuarantined) { updateSaveStatus('Recovery needed', 'error'); return false; }
     let envelope;
     try {
@@ -358,6 +390,16 @@
       updateSaveStatus('Save preparation failed', 'error');
       setStorageWarning(window.WTTNSaveStorage.message('serialization'));
       return false;
+    }
+    if (accountPanel) {
+      const milestone = [state.translations, state.networks, state.legacies, state.field.index, state.field.active, state.campaign.complete].join(':');
+      const significant = !!accountMilestone && accountMilestone !== milestone;
+      if (!accountPanel.changed(significant)) {
+        updateSaveStatus('Recovery storage full', 'error');
+        setStorageWarning('Your account save could not be safely stored. Keep this tab open and export your current progress before freeing browser storage.');
+        return false;
+      }
+      accountMilestone = milestone;
     }
     const previous = storageGet(SAVE_KEY);
     if (backup && previous) {
@@ -1250,6 +1292,7 @@
   }
 
   function renderSystem() {
+    accountPanel?.render();
     const controls = state.automation.controls || {};
     if (document.activeElement !== $('controlBaseAutomation')) $('controlBaseAutomation').checked = controls.baseEnabled !== false;
     if (document.activeElement !== $('controlProjectAutomation')) $('controlProjectAutomation').checked = controls.projectsEnabled !== false;
@@ -1924,6 +1967,7 @@
       currentDisclosure = D.getDisclosure(state, G);
       currentUx = U?.getAll(state, G) || currentUx;
       save(false, { backup: false });
+      accountPanel?.changed(true);
       masteryShown = !!state.phase2Complete; phase3Shown = !!state.phase3Complete; phase4Shown = !!state.phase4Complete; phase5Shown = !!state.phase5Complete;
       $('importDialog').close(); $('importText').value = ''; lastAtlasSignature = '';
       render(); toast(parsed.full?'Full backup imported · progress and arrangement':'Save imported and validated'); return true;
@@ -2233,6 +2277,27 @@
   startFrameLoop();
   window.WTTN_READY = true;
   document.documentElement.dataset.boot = 'ready';
+  // Account initialization is optional and happens only after local play is ready.
+  if (!SMOKE_MODE) {
+    const fullSnapshot = () => window.WTTNFullBackup.make(makeEnvelope(state), window.WTTNVisualPreferences.get().placements);
+    accountPanel = window.WTTNAccountPanel.init({
+      capture: fullSnapshot, save: () => save(false), ask, tabGuardSupported,
+      fresh: () => window.WTTNFullBackup.make(makeEnvelope(G.createState()), {}),
+      meaningful: window.WTTNCloudSnapshot.meaningful,
+      apply(text) {
+        if (saveQuarantined || storageGet(window.WTTNFullBackup.JOURNAL_KEY)) throw new Error('Finish local save recovery before switching settlements.');
+        const restored = window.WTTNCloudSnapshot.prepare(text);
+        window.WTTNFullBackup.commit(localStorage, restored.parsed, makeEnvelope(state), window.WTTNVisualPreferences.get(), {save:SAVE_KEY,backup:BACKUP_KEY,preferences:window.WTTNVisualPreferences.KEY});
+        state = restored.parsed.state;
+        window.WTTNVisualPreferences.adoptPlacements(restored.parsed.placements);
+        M?.seed?.(state, G); Q?.seed?.(state, G); window.WTTNSettlement?.seed();
+        currentDisclosure = D.getDisclosure(state, G); currentUx = U?.getAll(state, G) || {};
+        masteryShown = !!state.phase2Complete; phase3Shown = !!state.phase3Complete; phase4Shown = !!state.phase4Complete; phase5Shown = !!state.phase5Complete;
+        lastFrame = performance.now(); accumulator = 0; suspendedAt = document.hidden ? Date.now() : null; lastAtlasSignature = ''; accountMilestone = '';
+        render(); if (restored.summary) showOfflineSummary(restored.summary);
+      }
+    });
+  }
   // The actual save and its read-back above determine status. A second probe
   // can fail at the storage limit even when replacing the real save succeeded.
   if (saveQuarantined) setStorageWarning('Your stored save needs recovery. Autosaving is paused to protect it. Export your current progress, then use the recovery tools in System.');

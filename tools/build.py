@@ -25,10 +25,16 @@ def build():
         return text
     html=(ROOT/'index.html').read_text(encoding='utf-8')
     names=re.findall(r'<script src="([^"]+)"',html)+re.findall(r'<link rel="stylesheet" href="([^"]+)"',html)
-    for name in names:emit(name,rewrite((ROOT/name).read_text(encoding='utf-8')).encode())
+    for name in names:
+        data=rewrite((ROOT/name).read_text(encoding='utf-8')).encode()
+        if name.startswith('node_modules/'):
+            mapping[name]=emit('vendor/supabase-2.116.0.js',data)
+        else:emit(name,data)
     html=rewrite(html);(web/'index.html').write_text(html,encoding='utf-8')
     (web/'manifest.webmanifest').write_text(rewrite((ROOT/'manifest.webmanifest').read_text(encoding='utf-8')),encoding='utf-8')
     for name in ['.nojekyll','PRIVACY.md']:shutil.copy2(ROOT/name,web/name)
+    shutil.copytree(ROOT/'.well-known',web/'.well-known')
+    shutil.copy2(ROOT/'vendor/SUPABASE-LICENSE',web/'vendor/SUPABASE-LICENSE')
     essential=['./','./index.html','./manifest.webmanifest']+['./'+mapping[n] for n in names]
     fallback_names={'terrain','buildings-a','buildings-b','props','workers','decorations','equipment','navigation','journey','worker-variants','work-props','environment-activity','milestones','campaign-keepsakes'}
     for source,target in mapping.items():

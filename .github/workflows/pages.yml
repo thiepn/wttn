@@ -18,6 +18,8 @@ jobs:
           node-version: 24
       - name: Configure Pages
         uses: actions/configure-pages@v5
+      - name: Install pinned browser dependency
+        run: npm ci --ignore-scripts
       - name: Build static site
         run: python3 tools/build.py
       - name: Verify economy, saves and presentation
@@ -31,6 +33,7 @@ jobs:
           node tests/save-storage.test.js
           node tests/ui-repair.test.js
           node tests/audit-repairs.test.js
+          node tests/cloud-sync.test.js
           node tests/delivery.test.js
       - name: Upload site artifact
         uses: actions/upload-pages-artifact@v4

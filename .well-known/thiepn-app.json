@@ -1,0 +1,14 @@
+{
+  "schemaVersion": "1.0",
+  "app": "wttn",
+  "displayName": "Word to the Nations",
+  "path": "/wttn/",
+  "accountContract": "1.0",
+  "sdkContract": "1.x",
+  "integrationMode": "sdk-1.x",
+  "operationsVersion": "A7.1",
+  "sessionAuthority": "thiepn-account",
+  "degradedMode": "local-first",
+  "authEntryPoints": ["google"],
+  "health": { "networkFailureLogsOutUser": false, "localDataPreservedOnBackendFailure": true }
+}

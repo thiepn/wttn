@@ -1,6 +1,8 @@
-# Word to the Nations — v2.10.4
+# Word to the Nations — v2.11.0
 
-Latest patch: keyboard navigation, shared purchase quantities, order editing, reference search, short-screen controls and verified backup recovery. See [audit fixes and verification](AUDIT-FIXES-v2.10.4.md).
+v2.11.0 adds optional THIEPN Account integration and private cloud saves, preserving guest play and the existing economy. This release is staged while the central account interface is being built. See [integration and release gates](docs/ACCOUNT-INTEGRATION.md).
+
+The preceding v2.10.4 patch fixed keyboard navigation, shared purchase quantities, order editing, reference search, short-screen controls and verified backup recovery. See [audit fixes and verification](AUDIT-FIXES-v2.10.4.md).
 
 [Play Word to the Nations](https://thiepn.dev/wttn/) · [Deployment status](https://github.com/thiepn/wttn/actions/workflows/pages.yml)
 
@@ -16,9 +18,10 @@ A living Mediterranean Scripture settlement. This web-only visual update adds na
 
 ## Build and play
 
-Python 3 builds the static site; Node 18+ runs tests. No npm packages, backend, accounts, API keys or remote fonts are required.
+Python 3 builds the static site; Node 22+ installs the pinned Supabase browser dependency and runs tests. Guest gameplay remains available without an account or backend connection. Fonts are self-hosted.
 
 ```sh
+npm ci --ignore-scripts
 python tools/build.py
 python -m http.server 8080 --directory dist/web
 ```
@@ -30,13 +33,13 @@ npm test
 npm run test:visual
 ```
 
-`node tools/run-release-tests.cjs` runs all 34 suites, saves individual logs and returns a failure status if any suite fails. `npm run test:sessions` retains the scheduled-session simulator. This visual update does not alter its balance assumptions.
+`node tools/run-release-tests.cjs` runs all 38 suites, saves individual logs and returns a failure status if any suite fails. `npm run test:account` checks cloud-save safety. `npm run test:sessions` retains the scheduled-session simulator. This integration does not alter its balance assumptions.
 
 ## Distribution
 
 `dist/web` is the deployable site. Its paths are relative, scripts/styles/art are content-hashed, and the service worker has a build-specific identifier. Essential fallbacks work without detailed artwork. See [GitHub Pages instructions](GITHUB-PAGES.md). No deployment was performed for this delivery.
 
-The previous portable edition remains a separate, older download. v2.10 produces no portable HTML. Saves do not automatically follow a browser profile or origin: use Export/Import when moving to a different URL.
+The previous portable edition remains a separate, older download. Current releases produce no portable HTML. Guest saves stay in their browser profile and origin. Optional THIEPN cloud saves can follow an account; Export/Import remains available independently.
 
 ## Saves and appearance
 

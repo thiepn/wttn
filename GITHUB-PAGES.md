@@ -27,6 +27,7 @@ Economic saves remain local to the same browser origin. Before moving to another
 ## Local preview
 
 ```sh
+npm ci --ignore-scripts
 python tools/build.py
 python -m http.server 8080 --directory dist/web
 ```
