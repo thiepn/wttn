@@ -29,7 +29,7 @@ test('app storage reads both compact current saves and legacy plain-text saves',
 });
 test('full storage can replace a save even though the old extra probe fails',()=>{const s=store();s.setItem(KEY,S.makeEnvelope(G.createState()));const put=s.setItem;s.setItem=(key,value)=>{if(key!==KEY)throw Object.assign(new Error(),{name:'QuotaExceededError'});put(key,value);};const t=setup(s);assert(t.save());assert.equal(Storage.write(()=>s,'wttn.storage.probe','1').ok,false);assert(t.node('storageWarning').hidden);assert.equal(t.node('saveStatus').textContent,'Saved');assert(!app.includes("storageSet('wttn.storage.probe'"));});
 test('silent dropped writes are not reported as saved',()=>{const t=setup({getItem:()=>null,setItem(){}});assert(!t.save());assert.equal(t.node('saveStatus').textContent,'Export-only');assert(!t.node('storageWarning').hidden);assert.match(t.node('storageWarningText').textContent,/did not keep/);});
-test('quota errors identify storage capacity and preserve the previous save',()=>{const s=store(),old=S.makeEnvelope(G.createState());s.setItem(KEY,old);s.setItem=()=>{throw Object.assign(new Error(),{name:'QuotaExceededError'});};const t=setup(s);assert(!t.save());assert.equal(s.getItem(KEY),old);assert.match(t.node('storageWarningText').textContent,/local save space is full/);});
+test('quota errors identify storage capacity and preserve the previous save',()=>{const s=store(),old=S.makeEnvelope(G.createState());s.setItem(KEY,old);s.setItem=()=>{throw Object.assign(new Error(),{name:'QuotaExceededError'});};const t=setup(s);assert(!t.save());assert.equal(s.getItem(KEY),old);assert.match(t.node('storageWarningText').textContent,/Browser storage refused this save/);});
 test('quota recovery prioritizes the current save over redundant WTTN copies',()=>{
  const s=store(),old=S.makeEnvelope(G.createState()),legacy='wttn.phase5.save.v5',other='another.app.keep';
  s.setItem(KEY,old);s.setItem(BACKUP,old);s.setItem(legacy,old);s.setItem(other,'keep');
@@ -48,7 +48,7 @@ test('quota recovery never deletes the only valid backup behind a corrupt primar
  const s=store(),good=S.makeEnvelope(G.createState());s.setItem(KEY,'corrupt');s.setItem(BACKUP,good);
  s.setItem=(key,value)=>{if(key===KEY)throw Object.assign(new Error(),{name:'QuotaExceededError'});s.data.set(key,value);};
  const t=setup(s);assert(!t.save());assert.equal(s.getItem(KEY),'corrupt');assert.equal(s.getItem(BACKUP),good);
- assert.match(t.node('storageWarningText').textContent,/local save space is full/);
+ assert.match(t.node('storageWarningText').textContent,/Browser storage refused this save/);
 });
 test('blocked storage is identified rather than reported as successful',()=>{const t=setup();Object.defineProperty(t.context.window,'localStorage',{get(){throw Object.assign(new Error(),{name:'SecurityError'});}});assert(!t.save());assert.match(t.node('storageWarningText').textContent,/blocking local saves/);});
 test('save preparation failure is not blamed on browser storage',()=>{const s=store(),old=S.makeEnvelope(G.createState());s.setItem(KEY,old);const t=setup(s);t.context.makeEnvelope=()=>{throw new Error('serialization');};assert(!t.save());assert.equal(s.getItem(KEY),old);assert.equal(s.getItem(BACKUP),null);assert.equal(t.node('saveStatus').textContent,'Save preparation failed');assert.match(t.node('storageWarningText').textContent,/could not prepare/);});
