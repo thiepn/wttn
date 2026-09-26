@@ -19,6 +19,20 @@ test('actual save is verified and survives a new reader',()=>{const t=setup();as
 test('full storage can replace a save even though the old extra probe fails',()=>{const s=store();s.setItem(KEY,S.makeEnvelope(G.createState()));const put=s.setItem;s.setItem=(key,value)=>{if(key!==KEY)throw Object.assign(new Error(),{name:'QuotaExceededError'});put(key,value);};const t=setup(s);assert(t.save());assert.equal(Storage.write(()=>s,'wttn.storage.probe','1').ok,false);assert(t.node('storageWarning').hidden);assert.equal(t.node('saveStatus').textContent,'Saved');assert(!app.includes("storageSet('wttn.storage.probe'"));});
 test('silent dropped writes are not reported as saved',()=>{const t=setup({getItem:()=>null,setItem(){}});assert(!t.save());assert.equal(t.node('saveStatus').textContent,'Export-only');assert(!t.node('storageWarning').hidden);assert.match(t.node('storageWarningText').textContent,/did not keep/);});
 test('quota errors identify storage capacity and preserve the previous save',()=>{const s=store(),old=S.makeEnvelope(G.createState());s.setItem(KEY,old);s.setItem=()=>{throw Object.assign(new Error(),{name:'QuotaExceededError'});};const t=setup(s);assert(!t.save());assert.equal(s.getItem(KEY),old);assert.match(t.node('storageWarningText').textContent,/no room/);});
+test('quota recovery prioritizes the current save over redundant WTTN copies',()=>{
+ const s=store(),old=S.makeEnvelope(G.createState()),legacy='wttn.phase5.save.v5',other='another.app.keep';
+ s.setItem(KEY,old);s.setItem(BACKUP,old);s.setItem(legacy,old);s.setItem(other,'keep');
+ const put=s.setItem.bind(s);
+ s.setItem=(key,value)=>{
+  if(key===KEY&&s.data.has(BACKUP))throw Object.assign(new Error(),{name:'QuotaExceededError'});
+  if(key===BACKUP&&!s.data.has(BACKUP))throw Object.assign(new Error(),{name:'QuotaExceededError'});
+  put(key,value);
+ };
+ const t=setup(s);t.context.state.producers.scribe=9;
+ assert(t.save());assert.equal(S.parseSaveText(s.getItem(KEY)).state.producers.scribe,9);
+ assert.equal(s.getItem(BACKUP),null);assert.equal(s.getItem(legacy),null);assert.equal(s.getItem(other),'keep');
+ assert.equal(t.node('saveStatus').textContent,'Saved');assert(t.node('storageWarning').hidden);
+});
 test('blocked storage is identified rather than reported as successful',()=>{const t=setup();Object.defineProperty(t.context.window,'localStorage',{get(){throw Object.assign(new Error(),{name:'SecurityError'});}});assert(!t.save());assert.match(t.node('storageWarningText').textContent,/blocking local saves/);});
 test('save preparation failure is not blamed on browser storage',()=>{const s=store(),old=S.makeEnvelope(G.createState());s.setItem(KEY,old);const t=setup(s);t.context.makeEnvelope=()=>{throw new Error('serialization');};assert(!t.save());assert.equal(s.getItem(KEY),old);assert.equal(s.getItem(BACKUP),null);assert.equal(t.node('saveStatus').textContent,'Save preparation failed');assert.match(t.node('storageWarningText').textContent,/could not prepare/);});
 test('an interface error after a verified write cannot report data loss',()=>{const t=setup();t.context.toast=()=>{throw new Error('display failure');};assert(t.save(true));assert.equal(S.parseSaveText(t.storage.getItem(KEY)).state.producers.scribe,7);assert.equal(t.node('saveStatus').textContent,'Saved');assert(t.node('storageWarning').hidden);});
