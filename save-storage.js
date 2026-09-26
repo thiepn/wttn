@@ -1,9 +1,13 @@
-/* Verified local writes with transparent compact storage for large save payloads. */
-(function(root,factory){const api=factory();if(typeof module==='object'&&module.exports)module.exports=api;else root.WTTNSaveStorage=api;})(globalThis,function(){
+/* Verified local writes with IndexedDB durability and compact localStorage compatibility. */
+(function(root,factory){const api=factory(root);if(typeof module==='object'&&module.exports)module.exports=api;else root.WTTNSaveStorage=api;})(globalThis,function(root){
   'use strict';
 
   const PACK_PREFIX='WTTNPK1:';
   const PACK_THRESHOLD=768;
+  const DB_NAME='wttn-durable-save-v1';
+  const DB_VERSION=1;
+  const STORE='kv';
+  let dbPromise=null;
 
   function utf8Encode(value){
     if(typeof TextEncoder!=='undefined')return new TextEncoder().encode(value);
@@ -60,6 +64,13 @@
     return utf8Decode(unpackBytes(stored));
   }
 
+  function reason(error){
+    const name=error?.name;
+    if(name==='QuotaExceededError'||name==='NS_ERROR_DOM_QUOTA_REACHED')return 'quota';
+    if(name==='SecurityError'||name==='NotAllowedError')return 'blocked';
+    return 'unavailable';
+  }
+
   function write(getStorage,key,value){
     try{
       const storage=getStorage();
@@ -68,19 +79,109 @@
       storage.setItem(key,stored);
       if(storage.getItem(key)!==stored)return {ok:false,reason:'verification'};
       return {ok:true,compact:stored!==value,storedLength:stored.length,sourceLength:String(value).length};
-    }catch(error){
-      const name=error?.name;
-      return {ok:false,reason:name==='QuotaExceededError'||name==='NS_ERROR_DOM_QUOTA_REACHED'?'quota':name==='SecurityError'||name==='NotAllowedError'?'blocked':'unavailable'};
-    }
+    }catch(error){return {ok:false,reason:reason(error)};}
   }
 
-  function message(reason){
-    if(reason==='quota')return 'This site’s local save space is full. WTTN already compacted its save and reclaimed its obsolete copies, but the browser still refused the write. Export your progress before changing site data.';
-    if(reason==='blocked')return 'This browser is blocking local saves. Allow site storage or open the game directly in a regular browser tab, then retry. Export your progress before leaving this tab.';
-    if(reason==='verification')return 'The browser did not keep the save just written. Retry saving, or export your progress before leaving this tab.';
-    if(reason==='serialization')return 'The game could not prepare this save. Your last stored save is unchanged. Keep this tab open and retry saving.';
-    return 'The game could not write to browser storage. Retry saving, or export your progress before leaving this tab.';
+  function openDurable(){
+    if(!root?.indexedDB)return Promise.resolve(null);
+    if(dbPromise)return dbPromise;
+    dbPromise=new Promise((resolve,reject)=>{
+      let request;
+      try{request=root.indexedDB.open(DB_NAME,DB_VERSION);}catch(error){reject(error);return;}
+      request.onupgradeneeded=()=>{
+        const db=request.result;
+        if(!db.objectStoreNames.contains(STORE))db.createObjectStore(STORE);
+      };
+      request.onsuccess=()=>{
+        const db=request.result;
+        db.onversionchange=()=>{try{db.close();}catch(_){}dbPromise=null;};
+        resolve(db);
+      };
+      request.onerror=()=>reject(request.error||new Error('IndexedDB open failed.'));
+      request.onblocked=()=>reject(Object.assign(new Error('IndexedDB open blocked.'),{name:'InvalidStateError'}));
+    }).catch(error=>{dbPromise=null;throw error;});
+    return dbPromise;
   }
 
-  return {PACK_PREFIX,PACK_THRESHOLD,encode,decode,write,message};
+  async function durableGet(key){
+    const db=await openDurable();
+    if(!db)return null;
+    return new Promise((resolve,reject)=>{
+      const tx=db.transaction(STORE,'readonly');
+      const request=tx.objectStore(STORE).get(key);
+      request.onsuccess=()=>{try{resolve(decode(request.result??null));}catch(error){reject(error);}};
+      request.onerror=()=>reject(request.error||new Error('IndexedDB read failed.'));
+      tx.onabort=()=>reject(tx.error||new Error('IndexedDB read aborted.'));
+    });
+  }
+
+  async function durableCommit(primaryKey,backupKey,value,{backup=true}={}){
+    let db;
+    try{db=await openDurable();}catch(error){return {ok:false,reason:reason(error),error};}
+    if(!db)return {ok:false,reason:'unsupported'};
+    const stored=encode(value);
+    try{
+      await new Promise((resolve,reject)=>{
+        const tx=db.transaction(STORE,'readwrite'),store=tx.objectStore(STORE);
+        let started=false;
+        const current=store.get(primaryKey);
+        current.onsuccess=()=>{
+          if(started)return;
+          started=true;
+          if(backup&&typeof current.result==='string')store.put(current.result,backupKey);
+          store.put(stored,primaryKey);
+        };
+        current.onerror=()=>{try{tx.abort();}catch(_){}};
+        tx.oncomplete=resolve;
+        tx.onerror=()=>reject(tx.error||new Error('IndexedDB write failed.'));
+        tx.onabort=()=>reject(tx.error||current.error||new Error('IndexedDB write aborted.'));
+      });
+      const verify=await durableGet(primaryKey);
+      if(verify!==String(value))return {ok:false,reason:'verification'};
+      return {ok:true,compact:stored!==value,storedLength:stored.length,sourceLength:String(value).length};
+    }catch(error){return {ok:false,reason:reason(error),error};}
+  }
+
+  async function durablePut(key,value){
+    let db;
+    try{db=await openDurable();}catch(error){return {ok:false,reason:reason(error),error};}
+    if(!db)return {ok:false,reason:'unsupported'};
+    const stored=encode(value);
+    try{
+      await new Promise((resolve,reject)=>{
+        const tx=db.transaction(STORE,'readwrite');
+        tx.objectStore(STORE).put(stored,key);
+        tx.oncomplete=resolve;
+        tx.onerror=()=>reject(tx.error||new Error('IndexedDB write failed.'));
+        tx.onabort=()=>reject(tx.error||new Error('IndexedDB write aborted.'));
+      });
+      return (await durableGet(key))===String(value)?{ok:true}:{ok:false,reason:'verification'};
+    }catch(error){return {ok:false,reason:reason(error),error};}
+  }
+
+  async function durableRemove(key){
+    let db;
+    try{db=await openDurable();}catch(error){return false;}
+    if(!db)return false;
+    try{
+      await new Promise((resolve,reject)=>{
+        const tx=db.transaction(STORE,'readwrite');
+        tx.objectStore(STORE).delete(key);
+        tx.oncomplete=resolve;
+        tx.onerror=()=>reject(tx.error||new Error('IndexedDB delete failed.'));
+        tx.onabort=()=>reject(tx.error||new Error('IndexedDB delete aborted.'));
+      });
+      return (await durableGet(key))===null;
+    }catch(_){return false;}
+  }
+
+  function message(saveReason){
+    if(saveReason==='quota')return 'Browser storage refused this save. WTTN also tried its larger IndexedDB save store. Export your progress before changing site data.';
+    if(saveReason==='blocked')return 'This browser is blocking persistent saves. Allow site storage or open the game directly in a regular browser tab, then retry. Export your progress before leaving this tab.';
+    if(saveReason==='verification')return 'The browser did not keep the save just written. Retry saving, or export your progress before leaving this tab.';
+    if(saveReason==='serialization')return 'The game could not prepare this save. Your last stored save is unchanged. Keep this tab open and retry saving.';
+    return 'The game could not write to persistent browser storage. Retry saving, or export your progress before leaving this tab.';
+  }
+
+  return {PACK_PREFIX,PACK_THRESHOLD,DB_NAME,encode,decode,write,durableGet,durableCommit,durablePut,durableRemove,message};
 });
