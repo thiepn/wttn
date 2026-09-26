@@ -34,7 +34,7 @@ assert.deepStrictEqual(A.reconcile(advanced,fakeG), []);
 
 const html=text('index.html'), app=text('app.js'), css=text('styles.css'), sw=text('sw.js');
 const pkg=JSON.parse(text('package.json'));
-assert.strictEqual(pkg.version,'2.10.5');
+assert.strictEqual(pkg.version,'2.10.6');
 assert(html.includes('<script src="audio.js"></script>'));
 assert(html.indexOf('audio.js') < html.indexOf('app.js'));
 assert(require('fs').readFileSync(require('path').join(__dirname,'../dist/web/index.html'), 'utf8').includes(JSON.parse(require('fs').readFileSync(require('path').join(__dirname,'../dist/build-manifest.json'),'utf8')).assets['audio.js']), 'module must be included in the cached document');
@@ -47,4 +47,4 @@ for (const id of ['audioEnabled','audioMaster','audioUi','audioMilestones','audi
 for (const token of ['.audio-settings-card','.audio-mixer','.audio-level','.audio-status']) assert(css.includes(token), `missing audio CSS ${token}`);
 assert(!/\.mp3|\.wav|\.ogg/i.test(html+app+text('audio.js')), 'procedural audio release should not depend on bundled audio files');
 assert(text('audio.js').includes('AudioContext') || text('audio.js').includes('webkitAudioContext'));
-console.log('Pristine Phase 7 sound/audio identity: PASS · sound-off default · procedural Web Audio · persistent mixer · event cues · no replay on restore · v2.10.5');
+console.log('Pristine Phase 7 sound/audio identity: PASS · sound-off default · procedural Web Audio · persistent mixer · event cues · no replay on restore · v2.10.6');
