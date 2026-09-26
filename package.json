@@ -18,7 +18,7 @@
     "test:sessions": "node tests/workshop-sessions.js",
     "test:visual": "node tests/presentation.test.js && node tests/settlement-v29.test.js && node tests/visual-release.test.js && node tests/settlement-v210.test.js && node tests/economic-v210.test.js && node tests/delivery.test.js",
     "test:ui-repairs": "node tests/ui-repair.test.js",
-    "test:saving": "node tests/save-storage.test.js",
+    "test:saving": "node tests/save-storage.test.js && node tests/indexeddb-save.test.js",
     "test:audit": "node tests/audit-repairs.test.js"
   },
   "description": "A sunlit Scripture settlement with animated workers, meaningful idle progression, finite purchasing plans and optional reading."
