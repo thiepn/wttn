@@ -1,4 +1,4 @@
-(function () {
+(async function () {
   'use strict';
   const G = window.WTTNCore;
   const S = window.WTTNSave;
@@ -20,7 +20,7 @@
   const BACKUP_KEY = 'wttn.phase6.backup.v6';
   const LEGACY_SAVE_KEYS = ['wttn.phase5.save.v5','wttn.phase4.save.v4','wttn.phase3.save.v3','wttn.phase2.save.v2','wttn.phase1.save.v1'];
   const SMOKE_MODE = typeof location !== 'undefined' && new URLSearchParams(location.search).has('smoke');
-  const APP_VERSION = '2.10.5';
+  const APP_VERSION = '2.10.6';
   const UI_PREFS_KEY = 'wttn.ui.preferences.v1';
   const $ = id => document.getElementById(id);
   const paint = (element, markup) => window.WTTNView.patch(element, markup);
@@ -112,21 +112,50 @@
     return storageSet(MIGRATION_KEY,text);
   }
 
-  function load() {
-    const primary = storageGet(SAVE_KEY);
-    if (primary) {
-      try { const parsed=parseSaveText(primary); return { ...parsed, source: 'primary', recovered: false, migrationBlocked: !preserveMigration(primary) }; }
-      catch (e) { console.warn('Primary save failed validation', e); }
+  function readCandidate(raw, source, recovered = false) {
+    if (!raw) return null;
+    try {
+      const parsed = parseSaveText(raw);
+      return { ...parsed, raw, source, recovered };
+    } catch (error) {
+      console.warn(`Stored save failed validation (${source})`, error);
+      return null;
     }
-    const backup = storageGet(BACKUP_KEY);
-    if (backup) {
-      try {
-        const parsed = parseSaveText(backup);
-        if (!preserveMigration(backup)) return {...parsed,source:'backup',migrationBlocked:true};
-        parsed.state.records.saveRecoveries = (parsed.state.records.saveRecoveries || 0) + 1;
-        return { ...parsed, source: 'backup', recovered: true };
-      } catch (e) { console.warn('Backup save failed validation', e); }
+  }
+
+  async function load() {
+    const localPrimary = storageGet(SAVE_KEY);
+    const localBackup = storageGet(BACKUP_KEY);
+    let durablePrimary = null, durableBackup = null;
+    try {
+      [durablePrimary, durableBackup] = await Promise.all([
+        window.WTTNSaveStorage.durableGet(SAVE_KEY),
+        window.WTTNSaveStorage.durableGet(BACKUP_KEY)
+      ]);
+    } catch (error) { console.warn('IndexedDB save store is unavailable; using localStorage fallback.', error); }
+
+    const primaries = [
+      readCandidate(durablePrimary, 'indexeddb'),
+      readCandidate(localPrimary, 'primary')
+    ].filter(Boolean).sort((a,b)=>Number(b.savedAt||0)-Number(a.savedAt||0));
+
+    if (primaries.length) {
+      const chosen = primaries[0];
+      return { ...chosen, migrationBlocked: !preserveMigration(chosen.raw) };
     }
+
+    const backups = [
+      readCandidate(durableBackup, 'indexeddb-backup', true),
+      readCandidate(localBackup, 'backup', true)
+    ].filter(Boolean).sort((a,b)=>Number(b.savedAt||0)-Number(a.savedAt||0));
+
+    if (backups.length) {
+      const chosen = backups[0];
+      if (!preserveMigration(chosen.raw)) return {...chosen,migrationBlocked:true};
+      chosen.state.records.saveRecoveries = (chosen.state.records.saveRecoveries || 0) + 1;
+      return chosen;
+    }
+
     for (const key of LEGACY_SAVE_KEYS) {
       const raw = storageGet(key);
       if (!raw) continue;
@@ -137,12 +166,12 @@
         return { ...parsed, source: key, migrated: true, recovered: false };
       } catch (e) { console.warn(`Could not migrate ${key}`, e); }
     }
-    return { state: G.createState(), savedAt: Date.now(), source: primary || backup ? 'unreadable' : 'new', recovered: false };
+    return { state: G.createState(), savedAt: Date.now(), source: localPrimary || localBackup || durablePrimary || durableBackup ? 'unreadable' : 'new', recovered: false };
   }
 
   let importRecoveryBlocked=false;
   try{const restored=window.WTTNFullBackup.recoverPending(localStorage,{save:SAVE_KEY,backup:BACKUP_KEY,preferences:window.WTTNVisualPreferences.KEY});if(restored)window.WTTNVisualPreferences.adoptPlacements(restored);}catch(err){importRecoveryBlocked=true;console.warn('An interrupted full import needs recovery; the recovery copy is retained.',err);}
-  const loaded = load();
+  const loaded = await load();
   let state = loaded.state;
   let saveQuarantined = importRecoveryBlocked || loaded.source === 'unreadable' || !!loaded.migrationBlocked;
   let currentDisclosure = D.getDisclosure(state, G);
