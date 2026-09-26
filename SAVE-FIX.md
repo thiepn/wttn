@@ -1,3 +1,22 @@
+# v2.10.5 — quota-safe primary saves
+
+The save warning shown as “The browser has no room for this save” could be triggered even when the current save itself still fit. WTTN wrote the previous save into a second localStorage backup before replacing the primary. Because localStorage is quota-limited per origin (so apps under the same site share the same pool), that duplicate could consume the remaining space and make the real save fail.
+
+v2.10.5 changes the order and recovery behavior:
+
+- the verified primary save is written first;
+- if that write hits quota, WTTN removes only redundant WTTN backup/legacy copies and retries the primary;
+- the existing primary is never deleted before a verified replacement succeeds;
+- unrelated keys from other apps are never touched;
+- the previous save is written as a best-effort recovery backup only after the primary is safe;
+- obsolete v1–v5 WTTN save keys are pruned after a successful current-schema save.
+
+The warning still appears if the primary cannot be stored even after WTTN has reclaimed its own redundant copies. Export remains available in that genuine failure case.
+
+Regression coverage verifies that quota recovery saves the new primary, removes only WTTN-owned redundant copies, preserves unrelated application data, and keeps the old primary intact when every write still fails.
+
+---
+
 # v2.10.2 — verified save status
 
 The previous startup sequence could successfully replace the real save, then show a failure because a redundant extra storage-probe key could not be added. The same broad error handler also classified interface errors after writing as browser-storage failures. The reported user's exact browser condition was not reproduced in the available Chromium session, where saving already worked.
