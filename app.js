@@ -20,7 +20,7 @@
   const BACKUP_KEY = 'wttn.phase6.backup.v6';
   const LEGACY_SAVE_KEYS = ['wttn.phase5.save.v5','wttn.phase4.save.v4','wttn.phase3.save.v3','wttn.phase2.save.v2','wttn.phase1.save.v1'];
   const SMOKE_MODE = typeof location !== 'undefined' && new URLSearchParams(location.search).has('smoke');
-  const APP_VERSION = '2.10.4';
+  const APP_VERSION = '2.10.5';
   const UI_PREFS_KEY = 'wttn.ui.preferences.v1';
   const $ = id => document.getElementById(id);
   const paint = (element, markup) => window.WTTNView.patch(element, markup);
@@ -349,6 +349,10 @@
     warning.classList.toggle('hidden', !message);
   }
 
+  function pruneObsoleteSaveCopies() {
+    for (const key of LEGACY_SAVE_KEYS) storageRemove(key);
+  }
+
   function save(show = false, { backup = true } = {}) {
     if (saveQuarantined) { updateSaveStatus('Recovery needed', 'error'); return false; }
     let envelope;
@@ -359,11 +363,39 @@
       setStorageWarning(window.WTTNSaveStorage.message('serialization'));
       return false;
     }
+
     const previous = storageGet(SAVE_KEY);
-    if (backup && previous) {
-      try { parseSaveText(previous); storageSet(BACKUP_KEY, previous); } catch { /* never back up corrupt bytes */ }
+    let previousIsValid = false;
+    let backupCandidate = null;
+    if (previous) {
+      try {
+        parseSaveText(previous);
+        previousIsValid = true;
+        if (backup) backupCandidate = previous;
+      } catch { /* never back up corrupt bytes */ }
     }
-    const result = window.WTTNSaveStorage.write(() => window.localStorage, SAVE_KEY, envelope);
+
+    // The current save is the priority write. Writing a duplicate backup first can
+    // consume the final bytes of the origin-wide localStorage quota and make the
+    // real save fail even though replacing it would otherwise fit.
+    let result = window.WTTNSaveStorage.write(() => window.localStorage, SAVE_KEY, envelope);
+    let reclaimedForPrimary = false;
+    if (!result.ok && result.reason === 'quota') {
+      // Obsolete version keys are always redundant once the current in-memory
+      // state has been prepared successfully, so reclaim them before touching a
+      // recovery backup.
+      pruneObsoleteSaveCopies();
+      result = window.WTTNSaveStorage.write(() => window.localStorage, SAVE_KEY, envelope);
+    }
+    if (!result.ok && result.reason === 'quota' && previousIsValid) {
+      // A valid current primary makes the separate backup redundant. Remove that
+      // duplicate only as a last app-owned reclaim step, then retry once. If the
+      // primary is invalid (for example after loading from backup), preserve the
+      // recovery copy rather than risking the only known-good stored save.
+      storageRemove(BACKUP_KEY);
+      reclaimedForPrimary = true;
+      result = window.WTTNSaveStorage.write(() => window.localStorage, SAVE_KEY, envelope);
+    }
     if (!result.ok) {
       storageAvailable = false;
       if (!warnedAboutStorage) { console.warn('Local saving is unavailable; export remains available.'); warnedAboutStorage = true; }
@@ -372,6 +404,13 @@
       if (show) toast('Could not save locally');
       return false;
     }
+
+    // Once a current schema save is verified, old version keys are redundant.
+    // Removing them prevents this app from permanently accumulating full-save
+    // duplicates under the shared thiepn.dev localStorage quota.
+    pruneObsoleteSaveCopies();
+    if (backupCandidate && !reclaimedForPrimary) storageSet(BACKUP_KEY, backupCandidate);
+
     // Storage success must not be reclassified as data loss by a UI error.
     storageAvailable = true;
     warnedAboutStorage = false;
