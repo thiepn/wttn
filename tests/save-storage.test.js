@@ -3,7 +3,8 @@ const assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('nod
 const Storage=require('../save-storage'),G=require('../game-core'),S=require('../save-format');
 const app=fs.readFileSync(require('node:path').join(__dirname,'../app.js'),'utf8');
 const html=fs.readFileSync(require('node:path').join(__dirname,'../index.html'),'utf8');
-const KEY='wttn.phase6.save.v6',BACKUP='wttn.phase6.backup.v6',LEGACY=['wttn.phase5.save.v5','wttn.phase4.save.v4','wttn.phase3.save.v3','wttn.phase2.save.v2','wttn.phase1.save.v1'];let passed=0;\nconst parseStored=(storage,key)=>S.parseSaveText(Storage.decode(storage.getItem(key)));
+const KEY='wttn.phase6.save.v6',BACKUP='wttn.phase6.backup.v6',LEGACY=['wttn.phase5.save.v5','wttn.phase4.save.v4','wttn.phase3.save.v3','wttn.phase2.save.v2','wttn.phase1.save.v1'];let passed=0;
+const parseStored=(storage,key)=>S.parseSaveText(Storage.decode(storage.getItem(key)));
 function test(name,fn){fn();passed++;console.log('PASS '+name);}
 function store(){const data=new Map();return {data,getItem:k=>data.get(k)??null,setItem:(k,v)=>data.set(k,v),removeItem:k=>data.delete(k)};}
 function setup(storage=store()){
