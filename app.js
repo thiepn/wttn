@@ -2227,18 +2227,18 @@
   window.addEventListener('online', () => updateInstallUi());
   window.addEventListener('offline', () => updateInstallUi());
   const hadControllerAtBoot = !!navigator.serviceWorker?.controller;
-  navigator.serviceWorker?.addEventListener('controllerchange', () => {
+  navigator.serviceWorker?.addEventListener('controllerchange', async () => {
     if (!hadControllerAtBoot) { updateInstallUi(); return; }
     if (reloadingForUpdate) return;
-    if (!save(false)) { updateInstallUi('Update ready; export your progress before reloading.'); return; }
+    if (!await saveAndWait(false)) { updateInstallUi('Update active; export your progress before reloading.'); return; }
     reloadingForUpdate = true;
     location.reload();
   });
   $('installAppBtn').onclick = requestInstall;
   $('installTopBtn').onclick = requestInstall;
-  $('updateAppBtn').onclick = () => {
+  $('updateAppBtn').onclick = async () => {
     if (!swRegistration?.waiting) return;
-    if (!save(true)) { updateInstallUi('Export your save before updating; local saving is unavailable.'); return; }
+    if (!await saveAndWait(true)) { updateInstallUi('Export your save before updating; persistent saving is unavailable.'); return; }
     swRegistration.waiting.postMessage({ type: 'SKIP_WAITING' });
     updateInstallUi('Applying update…');
   };
