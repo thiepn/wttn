@@ -1,8 +1,9 @@
 (function (root, factory) {
-  const api = factory(root);
+  const depth = typeof require === 'function' && typeof module === 'object' && module.exports ? require('./midgame-depth.js') : null;
+  const api = factory(root, depth);
   if (typeof module === 'object' && module.exports) module.exports = api;
   root.WTTNUX = api;
-})(typeof globalThis !== 'undefined' ? globalThis : this, function (root) {
+})(typeof globalThis !== 'undefined' ? globalThis : this, function (root, depthModule) {
   'use strict';
 
   const pct = n => `${Math.round(Math.max(0, Math.min(1, Number(n) || 0)) * 100)}%`;
@@ -195,7 +196,7 @@
   }
 
   function insight(state, G) {
-    const depth = root?.WTTNDepth;
+    const depth = depthModule || root?.WTTNDepth;
     const investment = depth?.translationInvestmentModel?.(state) || null;
     const nextOne = investment?.permanent ? { def: investment.permanent, affordable: state.ti.gte(investment.permanent.cost) } : nextTiOneTime(state, G);
     const rec = investment?.recommendation || null;
