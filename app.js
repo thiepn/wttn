@@ -644,13 +644,23 @@
     </article>`;
   }
 
+  function oneTimeStateLabel(def, bought) {
+    if (!bought) return `${def.cost} TI`;
+    const controls = state.automation.controls || {};
+    if (def.id === 'basicAutomation') return state.automation.full ? 'Superseded' : controls.baseEnabled === false ? 'Unlocked · Paused' : 'Active';
+    if (def.id === 'fullAutomation') return controls.baseEnabled === false ? 'Unlocked · Paused' : 'Active';
+    if (def.id === 'projectQueue') return controls.projectsEnabled === false ? 'Unlocked · Paused' : 'Active';
+    if (def.id === 'translationAutomation') return controls.translationEnabled === false || state.automation.autoSettings?.enabled === false ? 'Unlocked · Paused' : 'Active';
+    return 'Unlocked';
+  }
+
   function oneTimeHtml(def) {
     const copy = C?.TRANSLATION?.oneTimes?.[def.id];
     const bought = !!state.tiOneTime[def.id];
     const available = G.oneTimeAvailable(state, def.id);
     const prereq = def.requires ? G.TI_ONE_TIMES.find(x => x.id === def.requires)?.name : null;
     return `<article id="ti-onetime-${def.id}" class="upgrade-card insight-card ${bought ? 'bought' : ''} ${!available && !bought ? 'locked-card' : ''} ${currentUx?.insight?.recommended?.type === 'ti-onetime' && currentUx.insight.recommended.id === def.id ? 'ux-recommended' : ''}">
-      <header><div><p class="eyebrow">PERMANENT</p><h3>${def.name}</h3></div><strong>${bought ? 'Active' : `${def.cost} TI`}</strong></header>
+      <header><div><p class="eyebrow">PERMANENT</p><h3>${def.name}</h3></div><strong>${oneTimeStateLabel(def, bought)}</strong></header>
       <p class="mechanical-effect">${def.description}</p>${copy?.description ? `<details class="flavor-note"><summary>In the workshop</summary><p>${copy.description}</p>${refsHtml(copy.references)}</details>` : ""}
       ${!available && !bought && prereq ? `<p class="lock-note">Requires ${prereq}</p>` : ''}
       <button data-ti-onetime="${def.id}" ${bought || !available || state.ti.lt(def.cost) ? 'disabled' : ''}>${bought ? 'Unlocked' : 'Unlock'}</button>
@@ -670,6 +680,7 @@
     const live = profile?.live?.map(([k,v]) => `<div><span>${escapeHtml(k)}</span><strong>${escapeHtml(v)}</strong></div>`).join('') || '';
     return `<article class="specialization-card ${current ? 'selected' : ''} ${queued ? 'queued' : ''}">
       <div><div class="specialization-art">${R?.specialization?.(def.id) || ''}</div><p class="eyebrow">${escapeHtml(profile?.role || 'SPECIALIZATION')}</p><h3>${def.name}</h3><p class="mechanical-effect">${def.description}</p>${copy?.description ? `<details class="flavor-note"><summary>In the workshop</summary><p>${copy.description}</p>${refsHtml(copy.references)}</details>` : ""}
+      ${!unlocked ? `<p class="lock-note">Unlocks at ${G.SPECIALIZATION_UNLOCK_LIFETIME_TI.format(0)} lifetime TI.</p>` : ''}
       ${profile ? `<div class="specialization-depth"><p><strong>Best for:</strong> ${escapeHtml(profile.bestFor)}</p><p><strong>Tradeoff:</strong> ${escapeHtml(profile.tradeoff)}</p><div class="live-effect-grid">${live}</div><small>Typical run shape: ${escapeHtml(profile.runWindow)}</small></div>` : ''}</div>
       <button data-specialization="${def.id}" ${!unlocked || current ? 'disabled' : ''}>${label}</button>
     </article>`;
@@ -1543,10 +1554,10 @@
 
     paint($('producerGrid'), () => W.visibleProducers(state).map(producerHtml).join(''));
     paint($('upgradeGrid'), () => W.visibleMethods(state).map(upgradeHtml).join(''));
-    paint($('projectGrid'), () => G.PROJECTS.map(projectHtml).join(''));
+    paint($('projectGrid'), () => G.PROJECTS.filter(def => !G.projectVisible || G.projectVisible(state, def.id)).map(projectHtml).join(''));
     if($('commissionReference'))paint($('commissionReference'),()=>state.pageUpgrades.reference?'<details><summary>Reference shelves · relationships and comparisons</summary>'+window.WTTNSecondaryScreens.reference(state,readableAmount)+'</details>':'<p class="fineprint">Reference System adds optional production relationships and commission comparisons in the Grand Library. All commission requirements and effects are shown above.</p>');
 
-    const anyProject = G.PROJECTS.some(def => G.projectStatus(state, def.id).available && !state.projects[def.id]);
+    const anyProject = G.PROJECTS.some(def => (!G.projectVisible || G.projectVisible(state, def.id)) && G.projectStatus(state, def.id).available && !state.projects[def.id]);
     $('projectBadge').classList.toggle('hidden', !anyProject);
     $('translationBadge').classList.toggle('hidden', gain.lt(1));
     $('insightBadge').classList.toggle('hidden', state.translations === 0 || state.ti.lt(1));
@@ -1760,7 +1771,14 @@
     });
     document.querySelectorAll('[data-ti-onetime]').forEach(btn => btn.onclick = () => {
       const id = btn.dataset.tiOnetime;
-      if (G.buyTiOneTime(state, id)) { toast('Permanent Translation unlock acquired'); render(); M?.cardFeedback?.(`ti-onetime-${id}`, { label: 'Permanent unlock', tone: 'translation', milestone: true }); Q?.play?.('unlock'); }
+      if (G.buyTiOneTime(state, id)) {
+        const controls = state.automation.controls || {};
+        const paused = (['basicAutomation','fullAutomation'].includes(id) && controls.baseEnabled === false) || (id === 'projectQueue' && controls.projectsEnabled === false) || (id === 'translationAutomation' && controls.translationEnabled === false);
+        toast(paused ? 'Automation unlocked · paused until enabled in System' : 'Permanent Translation unlock acquired');
+        render();
+        M?.cardFeedback?.(`ti-onetime-${id}`, { label: paused ? 'Unlocked · paused' : 'Permanent unlock', tone: 'translation', milestone: true });
+        Q?.play?.('unlock');
+      }
     });
     document.querySelectorAll('[data-specialization]').forEach(btn => btn.onclick = () => {
       const wasEmpty = !state.specialization;

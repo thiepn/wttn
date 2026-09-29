@@ -56,11 +56,11 @@
     { id: 'standardTerminology', name: 'Standard Terminology', cost: 5, description: 'Unlock detailed Translation gain diagnostics.' },
     { id: 'reusableTemplates', name: 'Reusable Templates', cost: 10, requires: 'standardTerminology', description: 'Unlock recent-run comparison in Translation.' },
     { id: 'consistentWorkflow', name: 'Consistent Workflow', cost: 20, requires: 'reusableTemplates', description: 'Unlock reset-efficiency guidance.' },
-    { id: 'basicAutomation', name: 'Basic Automation', cost: 25, requires: 'consistentWorkflow', description: 'Establishes the Scribe and Copyist chain, then spends only surplus Pages so stronger buildings and Methods are never starved.' },
-    { id: 'fullAutomation', name: 'Full Production Automation', cost: 50, requires: 'basicAutomation', description: 'Automatically buy all producers and base Methods.' },
-    { id: 'projectQueue', name: 'Project Queue', cost: 75, requires: 'fullAutomation', description: 'Automatically completes eligible Projects.' },
+    { id: 'basicAutomation', name: 'Basic Automation', cost: 25, requires: 'consistentWorkflow', description: 'Unlock reserve-aware Scribe and Copyist automation. It starts paused; enable Base Automation when you want it to run.' },
+    { id: 'fullAutomation', name: 'Full Production Automation', cost: 50, requires: 'basicAutomation', description: 'Extend Base Automation to all economic producers and Methods while respecting planned purchases and near-term Translation boundaries.' },
+    { id: 'projectQueue', name: 'Project Queue', cost: 75, requires: 'fullAutomation', description: 'Unlock automatic Project completion. It starts paused; enable Project Automation when you want it to run.' },
     { id: 'presets', name: 'Translation Presets', cost: 100, requires: 'projectQueue', description: 'Save and load Translation specialization and auto-reset settings.' },
-    { id: 'translationAutomation', name: 'Translation Automation', cost: 150, requires: 'presets', description: 'Automatically Translate using configurable reset rules.' }
+    { id: 'translationAutomation', name: 'Translation Automation', cost: 150, requires: 'presets', description: 'Unlock automatic Translation using configurable reset rules. It starts paused so purchasing it can never reset the current run.' }
   ];
 
   const SPECIALIZATIONS = [
@@ -923,8 +923,9 @@
     return availableFields(state)[0] || null;
   }
 
-  function legacyMilestones(state) {
-    const value = state.lifetimeLegacy.toNumber();
+  function legacyMilestones(state, lifetimeOverride = null) {
+    const source = lifetimeOverride === null || lifetimeOverride === undefined ? state.lifetimeLegacy : bn(lifetimeOverride);
+    const value = source.toNumber();
     return Object.fromEntries(LEGACY_MILESTONES.map(m => [m.id, value + 1e-9 >= m.amount]));
   }
 
@@ -956,8 +957,8 @@
     return bn(field.ncThreshold).mul((state.fieldRewards?.fieldThresholdMult || 1) * tradition).div(compression);
   }
 
-  function effectivePreparationLevel(state) {
-    const legacy = legacyMilestones(state);
+  function effectivePreparationLevel(state, legacyOverride = null) {
+    const legacy = legacyMilestones(state, legacyOverride);
     let level = Number(state.tiUpgrades?.preparation || 0) + (state.fieldRewards?.preparationBoost ? 1 : 0);
     if (state.tradition === 'translation') level += 1;
     if (legacy.foundationalMethods) level += 1;
@@ -1053,15 +1054,16 @@
       const readiness = Math.min(1, Math.max(0.30, (state.networkRunTime / 7200) ** 1.10));
       raw = raw.mul(readiness);
     }
-    return raw.floor().max(1);
+    return raw.floor();
   }
 
   function networkReadiness(state) {
-    const gain = networkGain(state);
     const threshold = effectiveNetworkThreshold(state);
-    if (gain.lt(1)) return { status: 'locked', label: 'Building', score: Math.min(1, state.tiThisNetwork.div(threshold).toNumber()), recommendation: `Earn ${threshold.format(0)} TI during this Network cycle.` };
+    if (state.tiThisNetwork.lt(threshold)) return { status: 'locked', label: 'Building', score: Math.min(1, state.tiThisNetwork.div(threshold).toNumber()), recommendation: `Earn ${threshold.format(0)} TI during this Network cycle.` };
+    const gain = networkGain(state);
     if (state.networks === 0) return { status: 'mature', label: 'Network ready', score: 1, recommendation: 'The first Network can now be established.' };
     const readiness = Math.min(1, Math.max(0.30, (state.networkRunTime / 7200) ** 1.10));
+    if (gain.lt(1)) return { status: 'early', label: 'Compressed', score: readiness, recommendation: 'The Network threshold is reached, but this short cycle is still too compressed to award 1 NC. Let the cycle mature or earn more TI.' };
     if (readiness < 0.55) return { status: 'early', label: 'Compressed', score: readiness, recommendation: 'Short Network cycles are compressed. Two hours reaches full Network readiness.' };
     if (readiness < 1) return { status: 'developing', label: 'Developing', score: readiness, recommendation: 'Network readiness is still improving toward its two-hour target.' };
     return { status: 'mature', label: 'Full readiness', score: 1, recommendation: 'This Network receives the full reward formula.' };
@@ -1161,12 +1163,13 @@
       const readiness = Math.min(1, Math.max(0.25, (state.runTime / target) ** 1.2));
       raw = raw.mul(readiness);
     }
-    return raw.floor().max(1);
+    return raw.floor();
   }
 
   function translationReadiness(state) {
+    const threshold = translationThreshold(state);
+    if (state.peakPages.lt(threshold)) return { status: 'locked', label: 'Not ready', score: 0, recommendation: `Reach ${threshold.format(2)} peak Pages.` };
     const gain = translationGain(state);
-    if (gain.lt(1)) return { status: 'locked', label: 'Not ready', score: 0, recommendation: `Reach ${translationThreshold(state).format(2)} peak Pages.` };
     if (state.translations === 0) {
       const minutes = state.runTime / 60;
       if (minutes < 20) return { status: 'early', label: 'Early', score: Math.min(0.75, minutes / 30), recommendation: 'You can Translate now, but the first run is usually more efficient around 20–30 minutes, or on your next visit.' };
@@ -1175,6 +1178,7 @@
     }
     const target = translationReadinessTarget(state);
     const readiness = Math.min(1, Math.max(0.25, (state.runTime / target) ** 1.2));
+    if (gain.lt(1)) return { status: 'early', label: 'Compressed', score: readiness, recommendation: 'The Translation threshold is reached, but this repeat run is still too compressed to award 1 TI. Wait longer or build a higher peak.' };
     if (readiness < 0.55) return { status: 'early', label: 'Compressed', score: readiness, recommendation: 'Very short repeat runs receive readiness compression. Waiting improves TI efficiency.' };
     if (readiness < 1) return { status: 'developing', label: 'Developing', score: readiness, recommendation: `TI readiness is still rising toward full value at ${(target/60).toFixed(target % 60 ? 1 : 0)} minutes${state.specialization === 'publisher' ? ' with Publisher' : ''}.` };
     return { status: 'mature', label: 'Full readiness', score: 1, recommendation: 'This run receives the full Translation reward formula.' };
@@ -1231,7 +1235,6 @@
     state.pages = state.pages.sub(cost);
     state.pageUpgrades[id] = 1;
     rememberSettlement(state, 'methods', id, true);
-    if (id === 'desk' && state.records.specializationUnlockedAt === null) state.records.specializationUnlockedAt = state.timePlayed;
     if (state.records.firstUpgradeAt === null) state.records.firstUpgradeAt = state.timePlayed;
     return true;
   }
@@ -1242,6 +1245,18 @@
     const teacherFactor = state.specialization === 'teacher' ? 0.80 : 1;
     const digital = allocationEffects(state).digitalProjectDivisor;
     return bn(def.peak).mul(teacherFactor * digital);
+  }
+
+  function projectVisible(state, id) {
+    const def = projectDef(id);
+    if (!def) return false;
+    if (state.projects[id]) return true;
+    if (effectivePreparationLevel(state) >= 4 || legacyMilestones(state).projectsVisible) return true;
+    const threshold = projectThreshold(state, id);
+    if (id === 'manuscript') return !!state.pageUpgrades.desk || state.peakPages.gte(threshold.div(5));
+    if (id === 'reference') return !!state.projects.manuscript || state.producers.editor > 0 || state.peakPages.gte(threshold.div(5));
+    if (id === 'teaching') return (!!state.projects.manuscript && !!state.projects.reference) || state.producers.teacher > 0 || state.peakPages.gte(threshold.div(5));
+    return true;
   }
 
   function projectStatus(state, id) {
@@ -1282,9 +1297,9 @@
     return effects[Math.max(0, Math.min(6, level))];
   }
 
-  function applyPreparation(state) {
-    const level = effectivePreparationLevel(state);
-    const legacy = legacyMilestones(state);
+  function applyPreparation(state, legacyOverride = null) {
+    const level = effectivePreparationLevel(state, legacyOverride);
+    const legacy = legacyMilestones(state, legacyOverride);
     if (level >= 1) state.producers.scribe = 10;
     if (level >= 2) state.producers.copyist = 10;
     if (level >= 3) { state.pageUpgrades.desk = 1; state.pageUpgrades.copying = 1; }
@@ -1301,7 +1316,7 @@
     }
   }
 
-  function resetBase(state) {
+  function resetBase(state, legacyOverride = null) {
     // Canonical mastery retires solved automation setup for the rotating Mature Fields.
     if (fieldClearCounts(state).total >= FIELDS.length) {
       for (const id of ['basicAutomation','fullAutomation','projectQueue','presets','translationAutomation']) state.tiOneTime[id] = true;
@@ -1313,7 +1328,7 @@
     state.pageUpgrades = zeroMap(PAGE_UPGRADES.map(x => x.id));
     state.projects = { manuscript: false, reference: false, teaching: false };
     state.runTime = 0;
-    applyPreparation(state);
+    applyPreparation(state, legacyOverride);
     if (state.queuedSpecialization && SPECIALIZATIONS.some(x => x.id === state.queuedSpecialization)) {
       state.specialization = state.queuedSpecialization;
       state.queuedSpecialization = null;
@@ -1342,6 +1357,7 @@
   }
 
   function resetTranslationLayerForNetwork(state) {
+    state.records.lastTranslationGain = bn(0);
     if (!state.netOneTime.persistentWorkflow && !legacyMilestones(state).buyMax) state.purchaseQueue.orders = [];
     const legacy = legacyMilestones(state);
     state.ti = state.netOneTime.matureNetwork || legacy.firstTranslationCompressed ? bn(10) : bn(0);
@@ -1441,7 +1457,8 @@
   function fieldReward(state) {
     const field = currentField(state);
     if (!field || !fieldObjectiveStatus(state, field).met) return bn(0);
-    return state.field.progressNc.pow(0.35).mul(field.difficulty * FIELD_REWARD_SCALE).floor().max(1);
+    // Rewards are fixed by the completed objective, not by farming excess NC after completion.
+    return fieldThreshold(state, field).pow(0.35).mul(field.difficulty * FIELD_REWARD_SCALE).floor().max(1);
   }
 
   function autoTranslationAllowed(state) {
@@ -1450,6 +1467,7 @@
   }
 
   function resetLowerLayersForField(state) {
+    state.records.lastTranslationGain = bn(0);
     if (!legacyMilestones(state).buyMax) state.purchaseQueue.orders = [];
     const legacy = legacyMilestones(state);
     state.ti = legacy.firstTranslationCompressed ? bn(10) : bn(0);
@@ -1583,17 +1601,18 @@
     return gain / days;
   }
 
-  function resetForLegacy(state) {
-    if (!legacyMilestones(state).buyMax) state.purchaseQueue.orders = [];
+  function resetForLegacy(state, milestoneBasis = null) {
+    if (!legacyMilestones(state, milestoneBasis).buyMax) state.purchaseQueue.orders = [];
     if (state.queuedTradition && traditionDef(state.queuedTradition)) {
       state.tradition = state.queuedTradition;
       state.queuedTradition = null;
     }
-    const legacy = legacyMilestones(state);
+    const legacy = legacyMilestones(state, milestoneBasis);
     state.fe = bn(0);
     state.feThisLegacy = bn(0);
     state.ncThisField = bn(0);
     state.tiThisNetwork = bn(0);
+    state.records.lastTranslationGain = bn(0);
     state.ti = legacy.firstTranslationCompressed ? bn(10) : bn(0);
     state.nc = bn(legacy.networkRecovery ? Math.max(5, Math.floor(state.lifetimeLegacy.toNumber() / 10)) : 0);
     state.networkRunTime = 0;
@@ -1623,7 +1642,7 @@
     state.field.enteredAt = null;
     state.field.stats = { translations: 0, networks: 0, validNetworks: 0, projects: [], allocations: [] };
     state.allocation = recommendedFieldAllocation(null);
-    resetBase(state);
+    resetBase(state, milestoneBasis);
   }
 
   function completeLegacy(state) {
@@ -1631,6 +1650,7 @@
     if (gain.lt(1)) return { ok: false, gain: bn(0) };
     const duration = state.legacyRunTime;
     const fe = state.feThisLegacy.clone();
+    const milestoneBasis = state.lifetimeLegacy.clone();
     state.legacy = state.legacy.add(gain);
     state.lifetimeLegacy = state.lifetimeLegacy.add(gain);
     state.legacies += 1;
@@ -1640,7 +1660,7 @@
     state.records.recentLegacies.unshift({ at: state.timePlayed, duration, gain: gain.clone(), fe, fieldIndex: state.field.index, matureClears: state.field.matureClears });
     state.records.recentLegacies = state.records.recentLegacies.slice(0, 12);
     state.legacyRunTime = 0;
-    resetForLegacy(state);
+    resetForLegacy(state, milestoneBasis);
     updateLibraryUnlocks(state);
     updatePhase5Completion(state);
     return { ok: true, gain, duration, fe };
@@ -1712,18 +1732,21 @@
     if (!oneTimeAvailable(state, id) || state.ti.lt(def.cost)) return false;
     state.ti = state.ti.sub(def.cost);
     state.tiOneTime[id] = true;
-    if (id === 'basicAutomation') state.automation.basic = true;
+    const controls = state.automation.controls || { baseEnabled: true, projectsEnabled: true, translationEnabled: true };
+    if (id === 'basicAutomation') { state.automation.basic = true; controls.baseEnabled = false; }
     if (id === 'fullAutomation') state.automation.full = true;
-    if (id === 'projectQueue') state.automation.projects = true;
+    if (id === 'projectQueue') { state.automation.projects = true; controls.projectsEnabled = false; }
     if (id === 'translationAutomation') {
       state.automation.translation = true;
+      controls.translationEnabled = false;
       if (state.records.translationAutomationAt === null) state.records.translationAutomationAt = state.timePlayed;
     }
+    state.automation.controls = controls;
     updatePhase2Completion(state);
     return true;
   }
 
-  function specializationUnlocked(state) { return !!state.pageUpgrades.desk || !!state.settlement?.methods?.desk || !!state.specialization || state.records.specializationUnlockedAt !== null || state.lifetimeTi.gte(SPECIALIZATION_UNLOCK_LIFETIME_TI); }
+  function specializationUnlocked(state) { return !!state.specialization || state.lifetimeTi.gte(SPECIALIZATION_UNLOCK_LIFETIME_TI); }
 
   function setSpecialization(state, id, { forNextRun = false } = {}) {
     if (!specializationUnlocked(state) || !SPECIALIZATIONS.some(x => x.id === id)) return false;
@@ -1742,6 +1765,7 @@
 
   function shouldAutoTranslate(state) {
     if (!state.automation.translation || state.automation.controls?.translationEnabled === false || !state.automation.autoSettings.enabled || !autoTranslationAllowed(state)) return false;
+    if (state.purchaseQueue?.orders?.length && !state.purchaseQueue.paused) return false;
     const gain = translationGain(state);
     if (gain.lt(1)) return false;
     const settings = state.automation.autoSettings;
@@ -1812,17 +1836,33 @@
     for (const id of ['copyist', 'scribe']) buyBasicProducer(state, id, reserve, false);
   }
 
+  function translationBoundaryHold(state) {
+    const threshold = translationThreshold(state);
+    if (state.peakPages.gte(threshold) || state.pages.gte(threshold)) return false;
+    const production = pageProduction(state);
+    if (production.isZero) return false;
+    return threshold.sub(state.pages).lte(production.mul(60));
+  }
+
   function runBaseAutomation(state) {
     runPurchaseQueue(state);
     const controls = state.automation.controls || { baseEnabled: true, projectsEnabled: true, translationEnabled: true };
-    if (controls.baseEnabled !== false && state.automation.full) {
-      for (const up of PAGE_UPGRADES) buyPageUpgrade(state, up.id);
-      for (const def of [...PRODUCERS].reverse()) buyProducer(state, def.id, 'max');
-    } else if (controls.baseEnabled !== false && state.automation.basic) {
+    const reserve = purchaseQueueReserve(state);
+    const queueBlocked = !!reserve && state.pages.lt(reserve);
+    if (!queueBlocked && controls.baseEnabled !== false && state.automation.full) {
+      if (!translationBoundaryHold(state)) {
+        for (const up of PAGE_UPGRADES.filter(x => !x.utility)) buyPageUpgrade(state, up.id);
+        for (const def of [...PRODUCERS].reverse()) buyProducer(state, def.id, 'max');
+      }
+    } else if (!queueBlocked && controls.baseEnabled !== false && state.automation.basic) {
       runBasicAutomation(state);
     }
-    if (controls.projectsEnabled !== false && state.automation.projects) {
-      for (const p of PROJECTS) completeProject(state, p.id);
+    if (!queueBlocked && controls.projectsEnabled !== false && state.automation.projects) {
+      if (state.netOneTime?.parallelProjects) {
+        for (const p of PROJECTS) completeProject(state, p.id);
+      } else {
+        for (const p of PROJECTS) if (completeProject(state, p.id)) break;
+      }
     }
   }
 
@@ -1868,6 +1908,19 @@
       q.orders.shift();
     }
   }
+  function purchaseQueueReserve(state) {
+    const q = state.purchaseQueue;
+    if (!q || q.paused || !queueUnlocked(state) || !q.orders.length) return null;
+    const o = q.orders[0];
+    if (o.type === 'method') {
+      if (state.pageUpgrades[o.id]) return null;
+      const def = upgradeDef(o.id);
+      return def ? bn(def.cost) : null;
+    }
+    if (state.producers[o.id] >= o.target) return null;
+    const def = producerDef(o.id);
+    return def ? producerCost(def, state.producers[o.id], state) : null;
+  }
   function purchaseQueueStatus(state) {
     if(!queueUnlocked(state)) return 'Purchase Organized Desk to plan six orders.';
     if(state.purchaseQueue.paused) return 'Paused — no planned purchases will run.';
@@ -1875,7 +1928,7 @@
     if(!o) return 'Add up to six orders. They run in sequence every ten seconds, including offline.';
     const d=o.type==='producer' ? producerDef(o.id) : PAGE_UPGRADES.find(x=>x.id===o.id);
     const cost=o.type==='producer' ? producerCost(d,state.producers[o.id],state) : bn(d.cost);
-    return state.pages.gte(cost) ? 'Ready — purchasing on the next ten-second cycle.' : `Waiting for ${cost.format(2)} Pages for ${d.name}.`;
+    return state.pages.gte(cost) ? 'Ready — purchasing on the next ten-second cycle.' : `Waiting for ${cost.format(2)} Pages for ${d.name}. Planned purchases reserve priority over automatic spending and Auto-Translation until completed or paused.`;
   }
 
   function setAutoSettings(state, patch) {
@@ -2250,6 +2303,7 @@
     maxAffordableProducerCount,
     buyPageUpgrade,
     projectThreshold,
+    projectVisible,
     projectStatus,
     completeProject,
     preparationEffect,

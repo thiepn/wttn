@@ -1,5 +1,17 @@
 # v2.10.0 — A Living, Crafted Settlement
 
+## Post-release gameplay safety hotfix
+
+- Automation unlocks no longer execute irreversible actions on purchase. Basic, Project and Translation automation unlock paused; Full Production Automation follows the existing Base Automation switch.
+- Planned purchases reserve priority over automatic spending and Auto-Translation. Full Automation also stops spending when the Translation boundary is less than about a minute away at current production.
+- Full Production Automation no longer buys the utility-only Reference System, and recommendation surfaces no longer present it as an economic upgrade.
+- Project Queue completes one eligible Project per cycle until Parallel Projects is owned; Parallel Projects now has a real mechanical effect.
+- Preparation Lv4 and the Open Projects Legacy milestone now reveal Projects from the start of a run instead of being dead text.
+- Translation and Network readiness compression can reduce an immature repeat reset below one reward instead of being cancelled by a forced minimum.
+- Higher resets clear stale Translation-gain comparison targets, Field rewards cannot be inflated by farming excess NC after objectives are complete, and Legacy milestones earned by a Legacy reset no longer rewrite that same reset.
+- Specializations now consistently unlock at 100 lifetime TI. Translation/Network investment guidance shares one opportunity-cost model and protects nearby permanent unlocks from contradictory spend recommendations.
+
+
 ## What changes
 
 - A native 3072×2048 terrain assembled from detailed source tiles, with separate sky, coast, water, terrace and foreground layers. The expanded scenery covers the authored camera limits.
@@ -15,7 +27,7 @@
 
 ## What is preserved
 
-Prices, production formulas, unlock requirements, approaches, commissions, reset rewards, finite purchasing rules and campaign content. `game-core.js`, `bignum.js` and `save-format.js` are byte-identical to v2.9. Schema 8, storage key, migration rules and recovery backups remain intact. Audio is still optional and off by default; Scripture reading remains economically neutral.
+Core prices, producer production values, campaign content, the numeric engine and the save envelope remain intact. `game-core.js` now intentionally differs from v2.9 because of the progression-safety fixes above; `bignum.js` and `save-format.js` remain byte-identical to the frozen baseline. Schema 8, storage key, migration rules and recovery backups remain intact. Audio is still optional and off by default; Scripture reading remains economically neutral.
 
 ## Delivery
 

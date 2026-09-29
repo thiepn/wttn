@@ -107,6 +107,13 @@ function approx(actual, expected, eps = 1e-8) {
   assert.strictEqual(s.field.active, false);
 }
 
+// Field rewards stop growing once the objective is complete; excess NC cannot be farmed for extra FE.
+{
+  const a = G.createState(); a.field.active = true; a.field.index = 0; a.field.progressNc = G.bn(2); a.field.stats.validNetworks = 1;
+  const b = G.createState(); b.field.active = true; b.field.index = 0; b.field.progressNc = G.bn(2000); b.field.stats.validNetworks = 1;
+  assert(G.fieldReward(a).eq(G.fieldReward(b)));
+}
+
 function simulateReference() {
   const s = G.createState();
   let nextDecision = 0;
@@ -140,6 +147,9 @@ function simulateReference() {
   }
 
   function act() {
+    if (s.automation.basic && s.automation.controls?.baseEnabled === false) { G.setAutomationControls(s, { baseEnabled: true }); return true; }
+    if (s.automation.projects && s.automation.controls?.projectsEnabled === false) { G.setAutomationControls(s, { projectsEnabled: true }); return true; }
+    if (s.automation.translation && s.automation.controls?.translationEnabled === false) { G.setAutomationControls(s, { translationEnabled: true }); return true; }
     if (G.specializationUnlocked(s) && !s.specialization) G.setSpecialization(s, 'publisher');
     chooseAllocation();
     if (buyNetworkDevelopment()) return true;

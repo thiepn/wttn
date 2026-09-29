@@ -51,10 +51,17 @@ function approx(actual, expected, eps = 1e-8) {
   assert(s.fe.eq(0) && s.feThisLegacy.eq(0));
   assert(s.nc.eq(0));
   assert(s.pages.eq(0));
-  assert.strictEqual(s.specialization, 'publisher', '15 lifetime Legacy should retain specialization');
+  assert.strictEqual(s.specialization, null, 'milestones earned by this reset must not rewrite the reset that earned them');
+  assert(!s.automation.basic && !s.automation.full, 'newly earned automation retention begins with the following Legacy reset');
   const milestones = G.legacyMilestones(s);
   assert(milestones.foundationalMethods && milestones.buyMax && milestones.automation && milestones.translationUnlocked);
   assert(!milestones.firstTranslationCompressed);
+
+  // On the next Legacy reset, the already-earned retention milestones apply.
+  s.specialization = 'publisher'; s.fe = G.bn(70); s.feThisLegacy = G.bn(70); s.legacyRunTime = G.LEGACY_READINESS_TARGET_SECONDS;
+  assert(G.completeLegacy(s).ok);
+  assert.strictEqual(s.specialization, 'publisher');
+  assert(s.automation.basic && s.automation.full);
 }
 
 // Traditions are locked until first Legacy and affect only their intended systems.
@@ -159,6 +166,9 @@ function simulateReference() {
   }
 
   function act() {
+    if (s.automation.basic && s.automation.controls?.baseEnabled === false) { G.setAutomationControls(s, { baseEnabled: true }); return true; }
+    if (s.automation.projects && s.automation.controls?.projectsEnabled === false) { G.setAutomationControls(s, { projectsEnabled: true }); return true; }
+    if (s.automation.translation && s.automation.controls?.translationEnabled === false) { G.setAutomationControls(s, { translationEnabled: true }); return true; }
     if (G.specializationUnlocked(s) && !s.specialization) G.setSpecialization(s, 'publisher');
     if (s.legacies > 0 && !s.tradition) G.setTradition(s, 'distribution');
     chooseAllocation();

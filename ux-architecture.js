@@ -1,8 +1,9 @@
 (function (root, factory) {
-  const api = factory();
+  const depth = typeof require === 'function' && typeof module === 'object' && module.exports ? require('./midgame-depth.js') : null;
+  const api = factory(root, depth);
   if (typeof module === 'object' && module.exports) module.exports = api;
   root.WTTNUX = api;
-})(typeof globalThis !== 'undefined' ? globalThis : this, function () {
+})(typeof globalThis !== 'undefined' ? globalThis : this, function (root, depthModule) {
   'use strict';
 
   const pct = n => `${Math.round(Math.max(0, Math.min(1, Number(n) || 0)) * 100)}%`;
@@ -13,7 +14,7 @@
   };
 
   function affordablePageUpgrade(state, G) {
-    return G.PAGE_UPGRADES.find(def => !state.pageUpgrades[def.id] && state.pages.gte(G.bn(def.cost))) || null;
+    return G.PAGE_UPGRADES.find(def => !def.utility && !state.pageUpgrades[def.id] && state.pages.gte(G.bn(def.cost))) || null;
   }
 
   function recommendedProducer(state, G) {
@@ -36,9 +37,10 @@
   }
 
   function nextProject(state, G) {
-    const available = G.PROJECTS.find(def => !state.projects[def.id] && G.projectStatus(state, def.id).available);
+    const visible = G.PROJECTS.filter(def => !G.projectVisible || G.projectVisible(state, def.id));
+    const available = visible.find(def => !state.projects[def.id] && G.projectStatus(state, def.id).available);
     if (available) return { def: available, available: true };
-    const locked = G.PROJECTS.find(def => !state.projects[def.id]);
+    const locked = visible.find(def => !state.projects[def.id]);
     return locked ? { def: locked, available: false } : null;
   }
 
@@ -62,12 +64,16 @@
   }
 
   function nextNetworkUpgrade(state, G) {
-    for (const def of G.NETWORK_UPGRADES) {
-      const cost = G.networkUpgradeCost(state, def.id);
-      if (!cost) continue;
-      return { def, cost, affordable: state.nc.gte(cost) };
+    const options = G.NETWORK_UPGRADES.map(def => ({ def, cost: G.networkUpgradeCost(state, def.id) })).filter(x => x.cost);
+    if (!options.length) return null;
+    const affordable = options.filter(x => state.nc.gte(x.cost));
+    if (affordable.length) {
+      const oneTime = affordable.filter(x => !x.def.repeatable).sort((a,b) => a.cost.toNumber() - b.cost.toNumber());
+      const best = oneTime[0] || affordable.sort((a,b) => a.cost.toNumber() - b.cost.toNumber())[0];
+      return { ...best, affordable: true };
     }
-    return null;
+    const next = options.sort((a,b) => a.cost.toNumber() - b.cost.toNumber())[0];
+    return { ...next, affordable: false };
   }
 
   function work(state, G) {
@@ -191,33 +197,61 @@
   }
 
   function insight(state, G) {
-    const nextOne = nextTiOneTime(state, G);
-    const rep = cheapestRepeatable(state, G);
+    const depth = depthModule || root?.WTTNDepth;
+    const investment = depth?.translationInvestmentModel?.(state) || null;
+    const nextOne = investment?.permanent ? { def: investment.permanent, affordable: state.ti.gte(investment.permanent.cost) } : nextTiOneTime(state, G);
+    const rec = investment?.recommendation || null;
+    const repeatable = rec?.type === 'repeatable' ? G.TI_REPEATABLES.find(x => x.id === rec.id) : null;
+
     if (G.specializationUnlocked(state) && !state.specialization) return {
       eyebrow: 'BUILD DECISION', question: 'Choose the specialization that defines your current Translation style.',
       summary: 'Scholar rewards longer runs, Publisher accelerates recovery, and Teacher strengthens milestones and Projects. The choice can change on later Translations.',
       metrics: [['Available', `${state.ti.format(0)} TI`], ['Lifetime', `${state.lifetimeTi.format(0)} TI`], ['Specialization', 'Choose now']],
       action: { label: 'Compare specializations', target: 'specializationGrid' }
     };
-    if (nextOne?.affordable) return {
-      eyebrow: 'BUILD DECISION', question: `Unlock ${nextOne.def.name}.`,
-      summary: 'The next permanent Translation-development unlock is affordable now. Permanent utility generally takes priority over another repeatable level.',
+    if (rec?.type === 'permanent' && nextOne) return {
+      eyebrow: 'BUILD DECISION', question: `${rec.title}.`, summary: rec.reason,
       metrics: [['Available', `${state.ti.format(0)} TI`], ['Cost', `${nextOne.def.cost} TI`], ['Current build', state.specialization || 'Unspecialized']],
       action: { label: 'Focus permanent unlock', target: `ti-onetime-${nextOne.def.id}` },
       recommended: { type: 'ti-onetime', id: nextOne.def.id }
     };
-    if (rep?.affordable) return {
-      eyebrow: 'BUILD DECISION', question: `Improve ${rep.def.name}.`,
-      summary: nextOne ? `The next permanent unlock (${nextOne.def.name}) costs ${nextOne.def.cost} TI; this repeatable is affordable now.` : 'Permanent Translation development is complete; invest excess TI into repeatable practice.',
-      metrics: [['Available', `${state.ti.format(0)} TI`], ['Repeatable cost', `${rep.cost.format(0)} TI`], ['Current build', state.specialization || 'Unspecialized']],
-      action: { label: `Focus ${rep.def.name}`, target: `ti-repeatable-${rep.def.id}` },
-      recommended: { type: 'ti-repeatable', id: rep.def.id }
+    if (rec?.type === 'save' && nextOne) return {
+      eyebrow: 'BUILD DECISION', question: `${rec.title}.`, summary: rec.reason,
+      metrics: [['Available', `${state.ti.format(0)} TI`], ['Next unlock', `${nextOne.def.cost} TI`], ['Specialization', state.specialization || 'Unspecialized']],
+      action: { label: 'Keep saving', target: `ti-onetime-${nextOne.def.id}` }
     };
+    if (rec?.type === 'repeatable' && repeatable) {
+      const cost = G.repeatableCost(state, repeatable.id);
+      return {
+        eyebrow: 'BUILD DECISION', question: `${rec.title}.`, summary: rec.reason,
+        metrics: [['Available', `${state.ti.format(0)} TI`], ['Repeatable cost', `${cost?.format(0) || '—'} TI`], ['Current build', state.specialization || 'Unspecialized']],
+        action: { label: `Focus ${repeatable.name}`, target: `ti-repeatable-${repeatable.id}` },
+        recommended: { type: 'ti-repeatable', id: repeatable.id }
+      };
+    }
+
+    const fallbackOne = nextTiOneTime(state, G);
+    const fallbackRepeatable = cheapestRepeatable(state, G);
+    if (!investment && fallbackOne?.affordable) return {
+      eyebrow: 'BUILD DECISION', question: `Unlock ${fallbackOne.def.name}.`,
+      summary: 'The next permanent Translation-development unlock is affordable now.',
+      metrics: [['Available', `${state.ti.format(0)} TI`], ['Cost', `${fallbackOne.def.cost} TI`], ['Current build', state.specialization || 'Unspecialized']],
+      action: { label: 'Focus permanent unlock', target: `ti-onetime-${fallbackOne.def.id}` },
+      recommended: { type: 'ti-onetime', id: fallbackOne.def.id }
+    };
+    if (!investment && fallbackRepeatable?.affordable) return {
+      eyebrow: 'BUILD DECISION', question: `Improve ${fallbackRepeatable.def.name}.`,
+      summary: 'This repeatable is affordable and no nearby permanent breakpoint is being reserved.',
+      metrics: [['Available', `${state.ti.format(0)} TI`], ['Repeatable cost', `${fallbackRepeatable.cost.format(0)} TI`], ['Current build', state.specialization || 'Unspecialized']],
+      action: { label: `Focus ${fallbackRepeatable.def.name}`, target: `ti-repeatable-${fallbackRepeatable.def.id}` },
+      recommended: { type: 'ti-repeatable', id: fallbackRepeatable.def.id }
+    };
+    const shown = nextOne || fallbackOne;
     return {
-      eyebrow: 'BUILD DECISION', question: nextOne ? `Save for ${nextOne.def.name}.` : 'Tune the Translation build around the next reset.',
-      summary: nextOne ? `You need ${nextOne.def.cost} TI for the next permanent unlock.` : 'Use repeatables, specialization, presets, and automation to shape the run rather than chasing every purchase equally.',
-      metrics: [['Available', `${state.ti.format(0)} TI`], ['Next unlock', nextOne ? `${nextOne.def.cost} TI` : 'Development complete'], ['Specialization', state.specialization || 'None']],
-      action: { label: nextOne ? 'Review development' : 'Review automation', target: nextOne ? 'oneTimeGrid' : 'automationWorkspace' }
+      eyebrow: 'BUILD DECISION', question: shown ? `Save for ${shown.def.name}.` : 'Tune the Translation build around the next reset.',
+      summary: shown ? `You need ${shown.def.cost} TI for the next permanent unlock.` : 'Use repeatables, specialization, presets, and automation to shape the run rather than chasing every purchase equally.',
+      metrics: [['Available', `${state.ti.format(0)} TI`], ['Next unlock', shown ? `${shown.def.cost} TI` : 'Development complete'], ['Specialization', state.specialization || 'None']],
+      action: { label: shown ? 'Review development' : 'Review automation', target: shown ? 'oneTimeGrid' : 'automationWorkspace' }
     };
   }
 
