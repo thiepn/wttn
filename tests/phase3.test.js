@@ -81,6 +81,37 @@ function approx(actual, expected, eps = 1e-8) {
   assert.strictEqual(s.networkRunTime, 0);
 }
 
+// Higher-layer resets clear stale Translation gain benchmarks so retained automation does not wait on an obsolete target.
+{
+  const s = G.createState();
+  s.tiThisNetwork = G.NETWORK_BASE_THRESHOLD; s.networkRunTime = 7200; s.records.lastTranslationGain = G.bn(999999);
+  assert(G.completeNetwork(s).ok);
+  assert(s.records.lastTranslationGain.isZero);
+}
+
+// Short repeat Networks must be meaningfully compressed instead of receiving a forced minimum reward.
+{
+  const s = G.createState(); s.networks = 1; s.tiThisNetwork = G.NETWORK_BASE_THRESHOLD.clone(); s.networkRunTime = 0;
+  assert(G.networkGain(s).eq(0));
+  assert.strictEqual(G.networkReadiness(s).status, 'early');
+}
+
+// Parallel Projects changes Project Queue from one completion per cycle to all eligible completions.
+{
+  const base = G.createState();
+  base.pages = G.bn('1e12'); base.peakPages = base.pages.clone(); base.producers.editor = 25; base.producers.teacher = 25;
+  base.automation.projects = true; G.setAutomationControls(base, { projectsEnabled: true, baseEnabled: false });
+  G.runAutomation(base);
+  assert(base.projects.manuscript && !base.projects.reference && !base.projects.teaching);
+
+  const parallel = G.createState();
+  parallel.pages = G.bn('1e12'); parallel.peakPages = parallel.pages.clone(); parallel.producers.editor = 25; parallel.producers.teacher = 25;
+  parallel.automation.projects = true; parallel.netOneTime.parallelProjects = true;
+  G.setAutomationControls(parallel, { projectsEnabled: true, baseEnabled: false });
+  G.runAutomation(parallel);
+  assert(parallel.projects.manuscript && parallel.projects.reference && parallel.projects.teaching);
+}
+
 // Retention upgrades affect the next Network reset without granting runaway power.
 {
   const s = G.createState();
@@ -116,6 +147,9 @@ function simulateReference() {
   }
 
   function act() {
+    if (s.automation.basic && s.automation.controls?.baseEnabled === false) { G.setAutomationControls(s, { baseEnabled: true }); return true; }
+    if (s.automation.projects && s.automation.controls?.projectsEnabled === false) { G.setAutomationControls(s, { projectsEnabled: true }); return true; }
+    if (s.automation.translation && s.automation.controls?.translationEnabled === false) { G.setAutomationControls(s, { translationEnabled: true }); return true; }
     if (G.specializationUnlocked(s) && !s.specialization) G.setSpecialization(s, 'publisher');
     chooseAllocation();
     if (buyNetworkDevelopment()) return true;
