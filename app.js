@@ -1771,7 +1771,8 @@
     document.querySelectorAll('[data-ti-onetime]').forEach(btn => btn.onclick = () => {
       const id = btn.dataset.tiOnetime;
       if (G.buyTiOneTime(state, id)) {
-        const paused = ['basicAutomation','projectQueue','translationAutomation'].includes(id);
+        const controls = state.automation.controls || {};
+        const paused = (['basicAutomation','fullAutomation'].includes(id) && controls.baseEnabled === false) || (id === 'projectQueue' && controls.projectsEnabled === false) || (id === 'translationAutomation' && controls.translationEnabled === false);
         toast(paused ? 'Automation unlocked · paused until enabled in System' : 'Permanent Translation unlock acquired');
         render();
         M?.cardFeedback?.(`ti-onetime-${id}`, { label: paused ? 'Unlocked · paused' : 'Permanent unlock', tone: 'translation', milestone: true });
