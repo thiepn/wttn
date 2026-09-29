@@ -62,4 +62,35 @@ networked.lifetimeNc = G.bn(10);
 ux = U.getAll(networked,G);
 assert(ux.network.question.length > 10);
 
+// The cockpit shares the depth model's opportunity-cost decision instead of recommending a purchase one TI before a permanent unlock.
+{
+  const s = G.createState(); s.translations = 5; s.lifetimeTi = G.bn(1000); s.ti = G.bn(24); s.specialization = 'publisher';
+  for (const id of ['standardTerminology','reusableTemplates','consistentWorkflow']) s.tiOneTime[id] = true;
+  s.tiUpgrades = { workflow: 2, training: 1, preparation: 0 };
+  const model = U.getAll(s,G).insight;
+  assert.match(model.question, /Save for Basic Automation/);
+  assert(!model.recommended, 'saving guidance must not simultaneously highlight a repeatable purchase');
+}
+
+// Network guidance evaluates all available development instead of blindly choosing the first array entry.
+{
+  const s = G.createState(); s.networks = 1; s.lifetimeNc = G.bn(1); s.nc = G.bn(8);
+  let model = U.getAll(s,G).network;
+  assert.strictEqual(model.recommended?.id, 'distributionNotes');
+  s.netOneTime.distributionNotes = true;
+  model = U.getAll(s,G).network;
+  assert.strictEqual(model.recommended?.id, 'localPartnership');
+}
+
+// Utility-only Reference System is never presented as the best economic purchase.
+{
+  const s = G.createState(); s.pages = G.bn('1e9'); s.peakPages = s.pages.clone();
+  for (const id of ['desk','copying','editorial','teaching','workshopCoord']) s.pageUpgrades[id] = 1;
+  s.projects = { manuscript:true, reference:true, teaching:true };
+  const model = U.getAll(s,G).work;
+  assert(!(model.recommended?.type === 'upgrade' && model.recommended?.id === 'reference'));
+}
+
+assert(app.includes('Unlocked · Paused'), 'automation cards must distinguish unlocked/paused from active');
+
 console.log('Pristine Phase 2 UX architecture: PASS · decision cockpits + workspaces + contextual recommendations verified');
