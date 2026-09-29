@@ -174,6 +174,16 @@ function approx(actual, expected, eps = 1e-9) { assert(Math.abs(actual - expecte
   assert.strictEqual(G.translationReadiness(s).status, 'early');
 }
 
+// Project discovery now gives Preparation Lv4 and the Legacy Open Projects milestone a real effect.
+{
+  const s = G.createState();
+  assert(!G.projectVisible(s, 'teaching'));
+  s.tiUpgrades.preparation = 4;
+  assert(G.PROJECTS.every(p => G.projectVisible(s, p.id)));
+  const legacy = G.createState(); legacy.lifetimeLegacy = G.bn(2);
+  assert(G.PROJECTS.every(p => G.projectVisible(legacy, p.id)));
+}
+
 // Presets preserve reset configuration and specialization intent.
 {
   const s = G.createState(); s.lifetimeTi = G.bn(1000); s.tiOneTime.presets = true; s.specialization = 'publisher';
