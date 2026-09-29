@@ -72,6 +72,33 @@ function approx(actual, expected, eps = 1e-9) { assert(Math.abs(actual - expecte
   assert(s.producers.editor > 0 && s.producers.scriptorium > 0);
 }
 
+// Basic Automation must never consume Pages that already make the next stronger building affordable.
+{
+  const s = G.createState();
+  s.automation.basic = true;
+  s.pageUpgrades.desk = 1; s.pageUpgrades.copying = 1;
+  s.producers.scribe = 9; s.producers.copyist = 9;
+  const editor = G.PRODUCERS.find(x => x.id === 'editor');
+  const reserve = G.producerCost(editor, 0, s);
+  s.pages = reserve.clone(); s.peakPages = reserve.clone();
+  G.runAutomation(s);
+  assert(s.pages.gte(reserve), 'Basic Automation spent the Editor reserve');
+  assert.strictEqual(s.producers.scribe, 9);
+  assert.strictEqual(s.producers.copyist, 9);
+}
+
+// Below the reserve, Basic Automation may seed the early chain but may not buy-max it.
+{
+  const s = G.createState();
+  s.automation.basic = true;
+  s.pageUpgrades.desk = 1; s.pageUpgrades.copying = 1;
+  s.pages = G.bn('9000'); s.peakPages = s.pages.clone();
+  G.runAutomation(s);
+  assert(s.producers.scribe > 0 && s.producers.scribe <= 3);
+  assert(s.producers.copyist > 0 && s.producers.copyist <= 3);
+  assert(s.pages.gt(0), 'Basic Automation drained the entire Page balance');
+}
+
 // Presets preserve reset configuration and specialization intent.
 {
   const s = G.createState(); s.lifetimeTi = G.bn(1000); s.tiOneTime.presets = true; s.specialization = 'publisher';
