@@ -56,7 +56,7 @@
     { id: 'standardTerminology', name: 'Standard Terminology', cost: 5, description: 'Unlock detailed Translation gain diagnostics.' },
     { id: 'reusableTemplates', name: 'Reusable Templates', cost: 10, requires: 'standardTerminology', description: 'Unlock recent-run comparison in Translation.' },
     { id: 'consistentWorkflow', name: 'Consistent Workflow', cost: 20, requires: 'reusableTemplates', description: 'Unlock reset-efficiency guidance.' },
-    { id: 'basicAutomation', name: 'Basic Automation', cost: 25, requires: 'consistentWorkflow', description: 'Automatically buy Scribes and Copyists plus their Methods.' },
+    { id: 'basicAutomation', name: 'Basic Automation', cost: 25, requires: 'consistentWorkflow', description: 'Establishes the Scribe and Copyist chain, then spends only surplus Pages so stronger buildings and Methods are never starved.' },
     { id: 'fullAutomation', name: 'Full Production Automation', cost: 50, requires: 'basicAutomation', description: 'Automatically buy all producers and base Methods.' },
     { id: 'projectQueue', name: 'Project Queue', cost: 75, requires: 'fullAutomation', description: 'Automatically completes eligible Projects.' },
     { id: 'presets', name: 'Translation Presets', cost: 100, requires: 'projectQueue', description: 'Save and load Translation specialization and auto-reset settings.' },
@@ -1752,16 +1752,74 @@
     return state.runTime >= Math.max(settings.minRun, Number(settings.maxRun) || 1800);
   }
 
+  function basicAutomationReserve(state) {
+    const targets = [];
+    for (const id of ['editor', 'teacher', 'workshop', 'scriptorium']) {
+      if ((state.producers[id] || 0) > 0) continue;
+      const def = producerDef(id);
+      if (def) targets.push(producerCost(def, 0, state));
+      break;
+    }
+    for (const id of ['editorial', 'teaching', 'workshopCoord', 'reference', 'shared', 'translationPrep']) {
+      if (state.pageUpgrades[id]) continue;
+      const def = upgradeDef(id);
+      if (def) targets.push(bn(def.cost));
+      break;
+    }
+    if (!targets.length) return TRANSLATION_THRESHOLD;
+    return targets.reduce((best, cost) => cost.lt(best) ? cost : best);
+  }
+
+  function basicAutomationCanSpend(state, cost, reserve) {
+    if (!canAfford(state.pages, cost)) return false;
+    // Below the next progression target, Basic Automation may establish only its
+    // small starter chain. Once the target is affordable, that balance is sacred.
+    return state.pages.lt(reserve) || !state.pages.sub(cost).lt(reserve);
+  }
+
+  function buyBasicMethod(state, id, reserve) {
+    const def = upgradeDef(id);
+    if (!def || state.pageUpgrades[id]) return false;
+    const cost = bn(def.cost);
+    if (!basicAutomationCanSpend(state, cost, reserve)) return false;
+    return buyPageUpgrade(state, id);
+  }
+
+  function buyBasicProducer(state, id, reserve, allowBelowReserve = false) {
+    const def = producerDef(id);
+    if (!def) return false;
+    const cost = producerCost(def, state.producers[id], state);
+    if (!canAfford(state.pages, cost)) return false;
+    if (!allowBelowReserve && state.pages.sub(cost).lt(reserve)) return false;
+    if (allowBelowReserve && !basicAutomationCanSpend(state, cost, reserve)) return false;
+    return buyProducer(state, id, 1).bought > 0;
+  }
+
+  function runBasicAutomation(state) {
+    const reserve = basicAutomationReserve(state);
+    for (const id of ['desk', 'copying']) buyBasicMethod(state, id, reserve);
+
+    // Establish the first useful milestone gradually instead of emptying the bank.
+    // This is deliberately bounded: Basic Automation is a helper, not a spender.
+    for (const id of ['copyist', 'scribe']) {
+      for (let i = 0; i < 2 && state.producers[id] < 10; i++) {
+        if (!buyBasicProducer(state, id, reserve, true)) break;
+      }
+    }
+
+    // After the starter chain, purchase at most one of each early producer per
+    // automation cycle and only from Pages above the next stronger progression target.
+    for (const id of ['copyist', 'scribe']) buyBasicProducer(state, id, reserve, false);
+  }
+
   function runBaseAutomation(state) {
     runPurchaseQueue(state);
     const controls = state.automation.controls || { baseEnabled: true, projectsEnabled: true, translationEnabled: true };
-    if (controls.baseEnabled !== false && (state.automation.basic || state.automation.full)) {
-      for (const id of ['desk', 'copying']) buyPageUpgrade(state, id);
-      for (const id of ['scribe', 'copyist']) buyProducer(state, id, 'max');
-    }
     if (controls.baseEnabled !== false && state.automation.full) {
       for (const up of PAGE_UPGRADES) buyPageUpgrade(state, up.id);
       for (const def of [...PRODUCERS].reverse()) buyProducer(state, def.id, 'max');
+    } else if (controls.baseEnabled !== false && state.automation.basic) {
+      runBasicAutomation(state);
     }
     if (controls.projectsEnabled !== false && state.automation.projects) {
       for (const p of PROJECTS) completeProject(state, p.id);
