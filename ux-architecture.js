@@ -37,9 +37,10 @@
   }
 
   function nextProject(state, G) {
-    const available = G.PROJECTS.find(def => !state.projects[def.id] && G.projectStatus(state, def.id).available);
+    const visible = G.PROJECTS.filter(def => !G.projectVisible || G.projectVisible(state, def.id));
+    const available = visible.find(def => !state.projects[def.id] && G.projectStatus(state, def.id).available);
     if (available) return { def: available, available: true };
-    const locked = G.PROJECTS.find(def => !state.projects[def.id]);
+    const locked = visible.find(def => !state.projects[def.id]);
     return locked ? { def: locked, available: false } : null;
   }
 
