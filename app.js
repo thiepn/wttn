@@ -644,13 +644,23 @@
     </article>`;
   }
 
+  function oneTimeStateLabel(def, bought) {
+    if (!bought) return `${def.cost} TI`;
+    const controls = state.automation.controls || {};
+    if (def.id === 'basicAutomation') return state.automation.full ? 'Superseded' : controls.baseEnabled === false ? 'Unlocked · Paused' : 'Active';
+    if (def.id === 'fullAutomation') return controls.baseEnabled === false ? 'Unlocked · Paused' : 'Active';
+    if (def.id === 'projectQueue') return controls.projectsEnabled === false ? 'Unlocked · Paused' : 'Active';
+    if (def.id === 'translationAutomation') return controls.translationEnabled === false || state.automation.autoSettings?.enabled === false ? 'Unlocked · Paused' : 'Active';
+    return 'Unlocked';
+  }
+
   function oneTimeHtml(def) {
     const copy = C?.TRANSLATION?.oneTimes?.[def.id];
     const bought = !!state.tiOneTime[def.id];
     const available = G.oneTimeAvailable(state, def.id);
     const prereq = def.requires ? G.TI_ONE_TIMES.find(x => x.id === def.requires)?.name : null;
     return `<article id="ti-onetime-${def.id}" class="upgrade-card insight-card ${bought ? 'bought' : ''} ${!available && !bought ? 'locked-card' : ''} ${currentUx?.insight?.recommended?.type === 'ti-onetime' && currentUx.insight.recommended.id === def.id ? 'ux-recommended' : ''}">
-      <header><div><p class="eyebrow">PERMANENT</p><h3>${def.name}</h3></div><strong>${bought ? 'Active' : `${def.cost} TI`}</strong></header>
+      <header><div><p class="eyebrow">PERMANENT</p><h3>${def.name}</h3></div><strong>${oneTimeStateLabel(def, bought)}</strong></header>
       <p class="mechanical-effect">${def.description}</p>${copy?.description ? `<details class="flavor-note"><summary>In the workshop</summary><p>${copy.description}</p>${refsHtml(copy.references)}</details>` : ""}
       ${!available && !bought && prereq ? `<p class="lock-note">Requires ${prereq}</p>` : ''}
       <button data-ti-onetime="${def.id}" ${bought || !available || state.ti.lt(def.cost) ? 'disabled' : ''}>${bought ? 'Unlocked' : 'Unlock'}</button>
@@ -1543,10 +1553,10 @@
 
     paint($('producerGrid'), () => W.visibleProducers(state).map(producerHtml).join(''));
     paint($('upgradeGrid'), () => W.visibleMethods(state).map(upgradeHtml).join(''));
-    paint($('projectGrid'), () => G.PROJECTS.map(projectHtml).join(''));
+    paint($('projectGrid'), () => G.PROJECTS.filter(def => !G.projectVisible || G.projectVisible(state, def.id)).map(projectHtml).join(''));
     if($('commissionReference'))paint($('commissionReference'),()=>state.pageUpgrades.reference?'<details><summary>Reference shelves · relationships and comparisons</summary>'+window.WTTNSecondaryScreens.reference(state,readableAmount)+'</details>':'<p class="fineprint">Reference System adds optional production relationships and commission comparisons in the Grand Library. All commission requirements and effects are shown above.</p>');
 
-    const anyProject = G.PROJECTS.some(def => G.projectStatus(state, def.id).available && !state.projects[def.id]);
+    const anyProject = G.PROJECTS.some(def => (!G.projectVisible || G.projectVisible(state, def.id)) && G.projectStatus(state, def.id).available && !state.projects[def.id]);
     $('projectBadge').classList.toggle('hidden', !anyProject);
     $('translationBadge').classList.toggle('hidden', gain.lt(1));
     $('insightBadge').classList.toggle('hidden', state.translations === 0 || state.ti.lt(1));
@@ -1760,7 +1770,13 @@
     });
     document.querySelectorAll('[data-ti-onetime]').forEach(btn => btn.onclick = () => {
       const id = btn.dataset.tiOnetime;
-      if (G.buyTiOneTime(state, id)) { toast('Permanent Translation unlock acquired'); render(); M?.cardFeedback?.(`ti-onetime-${id}`, { label: 'Permanent unlock', tone: 'translation', milestone: true }); Q?.play?.('unlock'); }
+      if (G.buyTiOneTime(state, id)) {
+        const paused = ['basicAutomation','projectQueue','translationAutomation'].includes(id);
+        toast(paused ? 'Automation unlocked · paused until enabled in System' : 'Permanent Translation unlock acquired');
+        render();
+        M?.cardFeedback?.(`ti-onetime-${id}`, { label: paused ? 'Unlocked · paused' : 'Permanent unlock', tone: 'translation', milestone: true });
+        Q?.play?.('unlock');
+      }
     });
     document.querySelectorAll('[data-specialization]').forEach(btn => btn.onclick = () => {
       const wasEmpty = !state.specialization;
