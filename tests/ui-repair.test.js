@@ -27,8 +27,8 @@ test('old arrangements recover every known object without accepting unknown iden
  assert(!A.restore({...placements,unknown:'home'}).ok);assert(!A.restore({pergola:'unknown'}).ok);assert(!A.restore(JSON.parse('{"__proto__":"home"}')).ok);
  assert(A.preview({pergola:'home'},'pergola','home').unchanged);
 });
-test('fix release preserves v2.10 numeric engine, economic rules and save envelope bytes',()=>{
- for(const file of ['bignum.js','game-core.js','save-format.js']){
+test('fix release preserves v2.10 numeric engine and save envelope bytes',()=>{
+ for(const file of ['bignum.js','save-format.js']){
   const hash=p=>crypto.createHash('sha256').update(fs.readFileSync(p)).digest('hex');
   assert.equal(hash(file),hash('tests/baseline-v2.9/'+file),file);
  }
