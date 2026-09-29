@@ -1928,7 +1928,7 @@
     if(!o) return 'Add up to six orders. They run in sequence every ten seconds, including offline.';
     const d=o.type==='producer' ? producerDef(o.id) : PAGE_UPGRADES.find(x=>x.id===o.id);
     const cost=o.type==='producer' ? producerCost(d,state.producers[o.id],state) : bn(d.cost);
-    return state.pages.gte(cost) ? 'Ready — purchasing on the next ten-second cycle.' : `Waiting for ${cost.format(2)} Pages for ${d.name}.`;
+    return state.pages.gte(cost) ? 'Ready — purchasing on the next ten-second cycle.' : `Waiting for ${cost.format(2)} Pages for ${d.name}. Planned purchases reserve priority over automatic spending and Auto-Translation until completed or paused.`;
   }
 
   function setAutoSettings(state, patch) {
