@@ -50,14 +50,28 @@ function approx(actual, expected, eps = 1e-9) { assert(Math.abs(actual - expecte
   assert(G.scholarMultiplier(scholar) > 1.3 && G.scholarMultiplier(scholar) < 1.5);
 }
 
+// Specialization is a 100-lifetime-TI system; buying Organized Desk alone must not unlock it.
+{
+  const s = G.createState();
+  s.pages = G.bn('1e6');
+  assert(G.buyPageUpgrade(s, 'desk'));
+  assert(!G.specializationUnlocked(s));
+  assert(!G.setSpecialization(s, 'publisher'));
+  s.lifetimeTi = G.bn(100);
+  assert(G.specializationUnlocked(s));
+  assert(G.setSpecialization(s, 'publisher'));
+}
+
 // One-time path is ordered and unlocks non-redundant automation stages.
 {
   const s = G.createState(); s.ti = G.bn(10000); s.lifetimeTi = G.bn(10000);
   assert(G.hasBuyMax(s)); assert(!G.buyTiOneTime(s, 'buyMax')); // Free convenience is not a paid upgrade.
   for (const id of ['standardTerminology','reusableTemplates','consistentWorkflow','basicAutomation']) assert(G.buyTiOneTime(s, id));
   assert(s.automation.basic && !s.automation.full);
+  assert.strictEqual(s.automation.controls.baseEnabled, false, 'new automation must start paused');
   assert(G.buyTiOneTime(s, 'fullAutomation'));
   assert(s.automation.full);
+  assert.strictEqual(s.automation.controls.baseEnabled, false, 'Full Automation must respect the existing paused Base switch');
 }
 
 // Basic automation handles only the early chain; full automation handles the entire base layer.
@@ -99,6 +113,67 @@ function approx(actual, expected, eps = 1e-9) { assert(Math.abs(actual - expecte
   assert(s.pages.gt(0), 'Basic Automation drained the entire Page balance');
 }
 
+// Project and Translation automation unlock capability without immediately spending or resetting.
+{
+  const s = G.createState(); s.ti = G.bn(10000); s.lifetimeTi = G.bn(10000);
+  for (const id of ['standardTerminology','reusableTemplates','consistentWorkflow','basicAutomation','fullAutomation']) assert(G.buyTiOneTime(s, id));
+  s.pages = G.bn('1e9'); s.peakPages = s.pages.clone(); s.producers.editor = 25;
+  assert(G.buyTiOneTime(s, 'projectQueue'));
+  assert.strictEqual(s.automation.controls.projectsEnabled, false);
+  const pagesBefore = s.pages.clone();
+  G.runAutomation(s);
+  assert(s.pages.eq(pagesBefore));
+  assert(!s.projects.manuscript && !s.projects.reference);
+
+  assert(G.buyTiOneTime(s, 'presets'));
+  s.pages = G.bn('1e15'); s.peakPages = s.pages.clone(); s.runTime = 600; s.records.lastTranslationGain = G.bn(1);
+  const translationsBefore = s.translations;
+  assert(G.buyTiOneTime(s, 'translationAutomation'));
+  assert.strictEqual(s.automation.controls.translationEnabled, false);
+  G.tick(s, 10);
+  assert.strictEqual(s.translations, translationsBefore, 'unlocking Translation Automation must not reset the current run');
+}
+
+// An active purchase plan outranks opportunistic automation.
+{
+  const s = G.createState();
+  s.translations = 1;
+  s.automation.full = true; s.automation.basic = true; s.automation.projects = true;
+  G.setAutomationControls(s, { baseEnabled: true, projectsEnabled: true, translationEnabled: true });
+  s.pages = G.bn('1e6'); s.peakPages = G.bn('1e9'); s.producers.editor = 25;
+  assert(G.enqueuePurchase(s, { type: 'method', id: 'translationPrep' }));
+  const before = JSON.stringify(s.producers);
+  const pagesBefore = s.pages.clone();
+  G.runAutomation(s);
+  assert.strictEqual(JSON.stringify(s.producers), before, 'Full Automation spent through a queued reserve');
+  assert(s.pages.eq(pagesBefore), 'Project automation spent Pages reserved for the queue');
+  assert(!s.projects.manuscript, 'Project automation must wait behind an active purchase plan');
+}
+
+// Full Automation excludes utility-only Methods and pauses when the Translation boundary is imminent.
+{
+  const s = G.createState(); s.pages = G.bn('1e30'); s.peakPages = s.pages.clone();
+  s.automation.full = true; G.setAutomationControls(s, { baseEnabled: true });
+  G.runAutomation(s);
+  assert.strictEqual(s.pageUpgrades.reference, 0, 'Reference System has no production return and must stay manual');
+
+  const near = G.createState();
+  near.pages = G.bn('9.99e11'); near.peakPages = near.pages.clone(); near.producers.scriptorium = 1;
+  near.automation.full = true; G.setAutomationControls(near, { baseEnabled: true });
+  const counts = JSON.stringify(near.producers), balance = near.pages.clone();
+  G.runAutomation(near);
+  assert.strictEqual(JSON.stringify(near.producers), counts, 'Automation should hold a Translation boundary that is less than a minute away');
+  assert(near.pages.eq(balance));
+}
+
+// Repeat-run readiness compression must actually reduce low-value early rewards.
+{
+  const s = G.createState();
+  s.translations = 1; s.peakPages = G.TRANSLATION_THRESHOLD.clone(); s.pages = s.peakPages.clone(); s.runTime = 0;
+  assert(G.translationGain(s).eq(0));
+  assert.strictEqual(G.translationReadiness(s).status, 'early');
+}
+
 // Presets preserve reset configuration and specialization intent.
 {
   const s = G.createState(); s.lifetimeTi = G.bn(1000); s.tiOneTime.presets = true; s.specialization = 'publisher';
@@ -134,6 +209,11 @@ function approx(actual, expected, eps = 1e-9) { assert(Math.abs(actual - expecte
 }
 
 function manualAct(s) {
+  // Reference player explicitly enables newly unlocked automation; purchasing it never does this implicitly.
+  if (s.automation.basic && s.automation.controls?.baseEnabled === false) { G.setAutomationControls(s, { baseEnabled: true }); return true; }
+  if (s.automation.projects && s.automation.controls?.projectsEnabled === false) { G.setAutomationControls(s, { projectsEnabled: true }); return true; }
+  if (s.automation.translation && s.automation.controls?.translationEnabled === false) { G.setAutomationControls(s, { translationEnabled: true }); return true; }
+
   // First-ever specialization may be selected immediately when it unlocks.
   if (G.specializationUnlocked(s) && !s.specialization) G.setSpecialization(s, 'publisher');
 
