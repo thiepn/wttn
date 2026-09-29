@@ -680,6 +680,7 @@
     const live = profile?.live?.map(([k,v]) => `<div><span>${escapeHtml(k)}</span><strong>${escapeHtml(v)}</strong></div>`).join('') || '';
     return `<article class="specialization-card ${current ? 'selected' : ''} ${queued ? 'queued' : ''}">
       <div><div class="specialization-art">${R?.specialization?.(def.id) || ''}</div><p class="eyebrow">${escapeHtml(profile?.role || 'SPECIALIZATION')}</p><h3>${def.name}</h3><p class="mechanical-effect">${def.description}</p>${copy?.description ? `<details class="flavor-note"><summary>In the workshop</summary><p>${copy.description}</p>${refsHtml(copy.references)}</details>` : ""}
+      ${!unlocked ? `<p class="lock-note">Unlocks at ${G.SPECIALIZATION_UNLOCK_LIFETIME_TI.format(0)} lifetime TI.</p>` : ''}
       ${profile ? `<div class="specialization-depth"><p><strong>Best for:</strong> ${escapeHtml(profile.bestFor)}</p><p><strong>Tradeoff:</strong> ${escapeHtml(profile.tradeoff)}</p><div class="live-effect-grid">${live}</div><small>Typical run shape: ${escapeHtml(profile.runWindow)}</small></div>` : ''}</div>
       <button data-specialization="${def.id}" ${!unlocked || current ? 'disabled' : ''}>${label}</button>
     </article>`;
