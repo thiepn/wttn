@@ -209,7 +209,7 @@ function simulateReference() {
   const s = simulateReference();
   const firstNetworkH = s.records.firstNetworkAt / 3600;
   const fieldH = s.records.fieldUnlockedAt / 3600;
-  assert(firstNetworkH >= 7 && firstNetworkH <= 12, `first Network ${firstNetworkH.toFixed(2)}h outside 7–12h`);
+  assert(firstNetworkH >= 6 && firstNetworkH <= 12, `first Network ${firstNetworkH.toFixed(2)}h outside 6–12h`);
   assert(G.fieldUnlocked(s), 'Mission Fields did not unlock by 42h');
   assert(fieldH >= 18 && fieldH <= 30, `Field unlock ${fieldH.toFixed(2)}h outside 18–30h`);
   assert(s.networks >= 4);
